@@ -1,0 +1,62 @@
+[
+  {
+    "id": "kb_001",
+    "segment": "cheap_hunter",
+    "title": "Phu kien gia re chat luong cao 2026",
+    "content": "Danh cho khach hang yeu thich tiet kiem, cung cap phu kien dien tu gia duoi 500 nghin dong nhu cap sac, op lung, cuong luc."
+  },
+  {
+    "id": "kb_002",
+    "segment": "cheap_hunter",
+    "title": "Tai nghe budget tot nhat 2026",
+    "content": "Voi ngan sach duoi 800 nghin dong, ban co the so huu tai nghe chat luong tot, am thanh on dinh va gia phai chang."
+  },
+  {
+    "id": "kb_003",
+    "segment": "cheap_hunter",
+    "title": "Dien thoai tam gia 5-10 trieu dong",
+    "content": "Xiaomi, Realme, Samsung A-series la nhung lua chon tuyet voi cho nguoi dung can bang giua gia va tinh nang."
+  },
+  {
+    "id": "kb_004",
+    "segment": "normal_user",
+    "title": "Smartphone tam trung dang mua 2026",
+    "content": "Samsung Galaxy A54, iPhone SE, Google Pixel 7a la lua chon can bang hieu nang, camera va pin trong phan khuc tam trung."
+  },
+  {
+    "id": "kb_005",
+    "segment": "normal_user",
+    "title": "Laptop van phong pho bien 2026",
+    "content": "Asus Vivobook, Lenovo IdeaPad, HP Pavilion trong muc gia 12-20 trieu dong phu hop lam viec van phong va hoc tap."
+  },
+  {
+    "id": "kb_006",
+    "segment": "normal_user",
+    "title": "Tai nghe khong day tam trung 2026",
+    "content": "AirPods the he 3, Sony WF-1000XM4, Galaxy Buds2 Pro trong muc gia 3-6 trieu dong cho trai nghiem am thanh tot."
+  },
+  {
+    "id": "kb_007",
+    "segment": "premium_user",
+    "title": "MacBook Pro M3 - Dinh cao hieu nang 2026",
+    "content": "MacBook Pro M3 la lua chon so mot cho creative professional voi hieu nang CPU/GPU vuot troi."
+  },
+  {
+    "id": "kb_008",
+    "segment": "premium_user",
+    "title": "iPhone 15 Pro Max - Flagship dinh cao 2026",
+    "content": "iPhone 15 Pro Max voi chip A17 Pro, camera 48MP ProRAW, man hinh XDR va vat lieu titan cao cap."
+  },
+  {
+    "id": "kb_009",
+    "segment": "premium_user",
+    "title": "Sony WH-1000XM5 - Tai nghe cao cap 2026",
+    "content": "Sony WH-1000XM5 cung cap ANC manh, am thanh Hi-Res va pin dai danh cho premium user."
+  },
+  {
+    "id": "kb_010",
+    "segment": "normal_user",
+    "title": "Huong dan chon mua dien thoai phu hop 2026",
+    "content": "Khi chon dien thoai can xem xet nhu cau, ngan sach, he dieu hanh va thoi han ho tro phan mem."
+  }
+]

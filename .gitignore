@@ -1,0 +1,12 @@
+node_modules/
+__pycache__/
+*.pyc
+.env
+*.db
+*.sqlite
+*.sqlite3
+*.h5
+*.pkl
+dist/
+.venv/
+data/neo4j/

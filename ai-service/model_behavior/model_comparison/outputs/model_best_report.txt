@@ -1,0 +1,14 @@
+Model comparison based on current outputs.
+
+Selection rule:
+score = 0.5*accuracy + 0.3*f1 + 0.2*auc
+
+Best model: BiLSTM
+Accuracy: 0.7893 +/- 0.0785
+F1: 0.7744 +/- 0.0943
+AUC: 0.9075 +/- 0.0477
+Loss: 0.2107 +/- 0.0785
+
+Epoch charts:
+- accuracy_epochs_3models_train_val.png
+- loss_epochs_3models_train_val.png

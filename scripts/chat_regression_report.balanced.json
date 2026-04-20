@@ -1,0 +1,498 @@
+﻿{
+    "summary":  {
+                    "failed":  0,
+                    "passRate":  100,
+                    "byGroup":  {
+                                    "tu_van":  {
+                                                   "failed":  0,
+                                                   "total":  8,
+                                                   "passed":  8
+                                               },
+                                    "nhu_cau":  {
+                                                    "failed":  0,
+                                                    "total":  6,
+                                                    "passed":  6
+                                                },
+                                    "ngan_sach":  {
+                                                      "failed":  0,
+                                                      "total":  6,
+                                                      "passed":  6
+                                                  },
+                                    "so_sanh":  {
+                                                    "failed":  0,
+                                                    "total":  6,
+                                                    "passed":  6
+                                                }
+                                },
+                    "total":  26,
+                    "passed":  26
+                },
+    "profileDescription":  "Default profile to reduce false-fail from wording drift while preserving intent checks.",
+    "profile":  "balanced",
+    "cases":  [
+                  {
+                      "id":  "cmp_phone_01",
+                      "group":  "so_sanh",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.9,
+                      "productCount":  3,
+                      "products":  [
+                                       "Phone Samsung S24 Ultra",
+                                       "iPhone 15 Pro",
+                                       "Phone Infinix Zero Gen 1"
+                                   ],
+                      "answerPreview":  "So sÃ¡nh nhanh Phone Samsung S24 Ultra vÃ  iPhone 15 Pro theo nhu cáº§u thá»±c táº¿: camera chá»¥p ÄÃªm vÃ  zoom thÆ°á»ng lá»£i tháº¿ hÆ¡n á» dÃ²ng Ultra; quay video á»n Äá»n",
+                      "message":  "So sanh iPhone 15 Pro va Samsung S24 Ultra, nen chon may nao?"
+                  },
+                  {
+                      "id":  "cmp_laptop_01",
+                      "group":  "so_sanh",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.45,
+                      "productCount":  3,
+                      "products":  [
+                                       "Laptop Dell XPS 15",
+                                       "Laptop MacBook Pro M3",
+                                       "Laptop LG Gram 13"
+                                   ],
+                      "answerPreview":  "So sÃ¡nh nhanh Laptop Dell XPS 15 vÃ  Laptop MacBook Pro M3: náº¿u báº¡n Æ°u tiÃªn thiáº¿t káº¿ Äá» há»a, pin bá»n vÃ  há» sinh thÃ¡i Apple thÃ¬ nghiÃªng vá» Laptop MacBook P",
+                      "message":  "So sanh MacBook Pro M3 va Dell XPS 15 cho cong viec do hoa"
+                  },
+                  {
+                      "id":  "cmp_budget_phone_01",
+                      "group":  "so_sanh",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.65,
+                      "productCount":  3,
+                      "products":  [
+                                       "Nothing Phone 2a",
+                                       "Phone Samsung A54",
+                                       "Phone Infinix Zero Gen 1"
+                                   ],
+                      "answerPreview":  "So sÃ¡nh nhanh Nothing Phone 2a vÃ  Phone Samsung A54: mÃ¬nh ÄÃ£ lá»c ÄÃºng 2 máº«u bÃ¡m sÃ¡t cÃ¢u há»i cá»§a báº¡n. Náº¿u báº¡n Æ°u tiÃªn á»n Äá»nh lÃ¢u dÃ i vÃ  há» sinh ",
+                      "message":  "So sanh Samsung A54 va Nothing Phone 2a trong tam gia re"
+                  },
+                  {
+                      "id":  "cmp_gaming_laptop_01",
+                      "group":  "so_sanh",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.413,
+                      "productCount":  3,
+                      "products":  [
+                                       "Laptop Asus Vivobook",
+                                       "Laptop HP Pavilion",
+                                       "Laptop LG Gram 13"
+                                   ],
+                      "answerPreview":  "So sÃ¡nh nhanh Laptop Asus Vivobook vÃ  Laptop HP Pavilion: mÃ¬nh ÄÃ£ lá»c ÄÃºng 2 máº«u bÃ¡m sÃ¡t cÃ¢u há»i cá»§a báº¡n. Náº¿u báº¡n Æ°u tiÃªn á»n Äá»nh lÃ¢u dÃ i vÃ  há» ",
+                      "message":  "So sanh laptop gaming tam trung va laptop van phong cho sinh vien CNTT"
+                  },
+                  {
+                      "id":  "cmp_camera_phone_01",
+                      "group":  "so_sanh",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.15,
+                      "productCount":  3,
+                      "products":  [
+                                       "Phone Samsung A54",
+                                       "Phone Infinix Zero Gen 1",
+                                       "Phone Infinix Zero Pro"
+                                   ],
+                      "answerPreview":  "So sÃ¡nh nhanh Phone Samsung A54 vÃ  Phone Infinix Zero Gen 1: mÃ¬nh ÄÃ£ lá»c ÄÃºng 2 máº«u bÃ¡m sÃ¡t cÃ¢u há»i cá»§a báº¡n. Náº¿u báº¡n Æ°u tiÃªn á»n Äá»nh lÃ¢u dÃ i vÃ  há",
+                      "message":  "So sanh 2 dien thoai chup anh dep trong tam gia 15 trieu"
+                  },
+                  {
+                      "id":  "cmp_work_laptop_01",
+                      "group":  "so_sanh",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.45,
+                      "productCount":  3,
+                      "products":  [
+                                       "Laptop MacBook Pro M3",
+                                       "Laptop LG Gram 13",
+                                       "Laptop Gigabyte Aero Gaming"
+                                   ],
+                      "answerPreview":  "Vá»i nhu cáº§u báº¡n vá»«a nÃªu, mÃ¬nh khuyÃªn Æ°u tiÃªn Laptop MacBook Pro M3. Laptop LG Gram 13 lÃ  phÆ°Æ¡ng Ã¡n thay tháº¿ náº¿u báº¡n muá»n tá»i Æ°u ngÃ¢n sÃ¡ch hoáº·c há» ",
+                      "message":  "Nen chon MacBook hay laptop Windows de lam viec van phong va hop online?"
+                  },
+                  {
+                      "id":  "advice_phone_01",
+                      "group":  "tu_van",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.15,
+                      "productCount":  3,
+                      "products":  [
+                                       "Phone Realme 11 Pro",
+                                       "Phone Xiaomi Redmi Note Plus",
+                                       "Phone Xiaomi Poco X Pro"
+                                   ],
+                      "answerPreview":  "Theo cÃ¢u há»i cá»§a báº¡n, mÃ¬nh Äá» xuáº¥t báº¯t Äáº§u vá»i Huong dan chon mua dien thoai phu hop. Báº¡n thuá»c nhÃ³m cÃ¢n báº±ng, nÃªn chá»n sáº£n pháº©m á»n Äá»nh, dá",
+                      "message":  "Toi can tu van dien thoai pin trau duoi 10 trieu"
+                  },
+                  {
+                      "id":  "advice_phone_02",
+                      "group":  "tu_van",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.55,
+                      "productCount":  3,
+                      "products":  [
+                                       "Phone Google Pixel 8 Pro",
+                                       "Phone Samsung S24 Ultra",
+                                       "iPhone 15 Pro"
+                                   ],
+                      "answerPreview":  "Theo cÃ¢u há»i cá»§a báº¡n, mÃ¬nh Äá» xuáº¥t báº¯t Äáº§u vá»i Huong dan chon mua dien thoai phu hop. Báº¡n thuá»c nhÃ³m cÃ¢n báº±ng, nÃªn chá»n sáº£n pháº©m á»n Äá»nh, dá",
+                      "message":  "Tu van cho toi dien thoai cao cap uu tien camera quay video"
+                  },
+                  {
+                      "id":  "advice_laptop_01",
+                      "group":  "tu_van",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.247,
+                      "productCount":  3,
+                      "products":  [
+                                       "Laptop Asus Vivobook",
+                                       "Laptop LG Gram 13",
+                                       "Laptop Gigabyte Aero Gaming"
+                                   ],
+                      "answerPreview":  "Theo cÃ¢u há»i cá»§a báº¡n, mÃ¬nh Äá» xuáº¥t báº¯t Äáº§u vá»i Laptop van phong pho bien. Báº¡n thuá»c nhÃ³m cÃ¢n báº±ng, nÃªn chá»n sáº£n pháº©m á»n Äá»nh, dá»\u0085 sá»­ dá»¥",
+                      "message":  "Toi can tu van laptop cho do hoa va pin tot"
+                  },
+                  {
+                      "id":  "advice_laptop_02",
+                      "group":  "tu_van",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.413,
+                      "productCount":  3,
+                      "products":  [
+                                       "Laptop Asus Vivobook",
+                                       "Laptop HP Pavilion",
+                                       "Laptop MSI Katana 15"
+                                   ],
+                      "answerPreview":  "Theo cÃ¢u há»i cá»§a báº¡n, mÃ¬nh Äá» xuáº¥t báº¯t Äáº§u vá»i Laptop van phong pho bien. Báº¡n thuá»c nhÃ³m cÃ¢n báº±ng, nÃªn chá»n sáº£n pháº©m á»n Äá»nh, dá»\u0085 sá»­ dá»¥",
+                      "message":  "Tu van laptop hoc tap va lap trinh cho sinh vien nam nhat"
+                  },
+                  {
+                      "id":  "advice_audio_01",
+                      "group":  "tu_van",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.15,
+                      "productCount":  3,
+                      "products":  [
+                                       "Razer BlackShark V2 X",
+                                       "Belkin Over-Ear Headphones Gen 2",
+                                       "Belkin Wireless Earbuds Gen 1"
+                                   ],
+                      "answerPreview":  "Theo cÃ¢u há»i cá»§a báº¡n, mÃ¬nh Äá» xuáº¥t báº¯t Äáº§u vá»i Tai nghe khong day tam trung. Báº¡n thuá»c nhÃ³m cÃ¢n báº±ng, nÃªn chá»n sáº£n pháº©m á»n Äá»nh, dá»\u0085 sá»­ d",
+                      "message":  "Tu van tai nghe cho hop online va nghe nhac"
+                  },
+                  {
+                      "id":  "advice_display_01",
+                      "group":  "tu_van",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.6,
+                      "productCount":  3,
+                      "products":  [
+                                       "Belkin 34-inch Ultrawide Monitor Gen 2",
+                                       "Baseus 34-inch Ultrawide Monitor Gen 2",
+                                       "Ugreen 34-inch Ultrawide Monitor Gen 2"
+                                   ],
+                      "answerPreview":  "Theo cÃ¢u há»i cá»§a báº¡n, mÃ¬nh Äá» xuáº¥t báº¯t Äáº§u vá»i iPhone 15 Pro Max - Flagship dinh 2024. Báº¡n thuá»c nhÃ³m cÃ¢n báº±ng, nÃªn chá»n sáº£n pháº©m á»n Äá»nh, d",
+                      "message":  "Tu van man hinh lam viec tai nha, can nhin de lau moi mat"
+                  },
+                  {
+                      "id":  "advice_combo_01",
+                      "group":  "tu_van",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.247,
+                      "productCount":  3,
+                      "products":  [
+                                       "Laptop Asus ROG Zephyrus 13",
+                                       "Baseus Ergonomic Mouse Gen 1",
+                                       "Belkin Over-Ear Headphones Gen 2"
+                                   ],
+                      "answerPreview":  "Theo cÃ¢u há»i cá»§a báº¡n, mÃ¬nh Äá» xuáº¥t báº¯t Äáº§u vá»i Tai nghe khong day tam trung. Báº¡n thuá»c nhÃ³m cÃ¢n báº±ng, nÃªn chá»n sáº£n pháº©m á»n Äá»nh, dá»\u0085 sá»­ d",
+                      "message":  "Goi y combo gaming gom laptop, chuot va tai nghe trong tam gia 30 trieu"
+                  },
+                  {
+                      "id":  "advice_accessory_01",
+                      "group":  "tu_van",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.15,
+                      "productCount":  3,
+                      "products":  [
+                                       "Samsung T7 SSD 1TB",
+                                       "Belkin MagSafe Charger",
+                                       "TP-Link Archer AX55 Router"
+                                   ],
+                      "answerPreview":  "Theo cÃ¢u há»i cá»§a báº¡n, mÃ¬nh Äá» xuáº¥t báº¯t Äáº§u vá»i MacBook Pro M3 - Dinh cao hieu nang. Báº¡n thuá»c nhÃ³m cÃ¢n báº±ng, nÃªn chá»n sáº£n pháº©m á»n Äá»nh, dá»\u0085",
+                      "message":  "Tu van phu kien cho macbook de lam viec tu xa"
+                  },
+                  {
+                      "id":  "budget_phone_01",
+                      "group":  "ngan_sach",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.55,
+                      "productCount":  3,
+                      "products":  [
+                                       "Phone Realme 11 Pro",
+                                       "Phone Samsung Galaxy A Pro",
+                                       "Phone Realme Number Gen 1"
+                                   ],
+                      "answerPreview":  "Theo cÃ¢u há»i cá»§a báº¡n, mÃ¬nh Äá» xuáº¥t báº¯t Äáº§u vá»i Huong dan chon mua dien thoai phu hop. Báº¡n thuá»c nhÃ³m cÃ¢n báº±ng, nÃªn chá»n sáº£n pháº©m á»n Äá»nh, dá",
+                      "message":  "Goi y dien thoai re tien duoi 8 trieu"
+                  },
+                  {
+                      "id":  "budget_phone_02",
+                      "group":  "ngan_sach",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.08,
+                      "productCount":  3,
+                      "products":  [
+                                       "Phone Samsung Galaxy M Gen 1",
+                                       "Phone Samsung Galaxy A Gen 1",
+                                       "Phone Samsung A54"
+                                   ],
+                      "answerPreview":  "Theo cÃ¢u há»i cá»§a báº¡n, mÃ¬nh Äá» xuáº¥t báº¯t Äáº§u vá»i Huong dan chon mua dien thoai phu hop. Báº¡n thuá»c nhÃ³m cÃ¢n báº±ng, nÃªn chá»n sáº£n pháº©m á»n Äá»nh, dá",
+                      "message":  "Toi co 6 trieu, nen mua dien thoai nao ngon?"
+                  },
+                  {
+                      "id":  "budget_laptop_01",
+                      "group":  "ngan_sach",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.2,
+                      "productCount":  3,
+                      "products":  [
+                                       "Laptop HP Pavilion",
+                                       "Laptop Dell Inspiron 13",
+                                       "Laptop Lenovo IdeaPad"
+                                   ],
+                      "answerPreview":  "MÃ¬nh ÄÃ£ lá»c 3 sáº£n pháº©m bÃ¡m sÃ¡t nhu cáº§u cá»§a báº¡n: Laptop HP Pavilion, Laptop Dell Inspiron 13, Laptop Lenovo IdeaPad. Báº¡n cÃ³ thá» chá»n theo ngÃ¢n sÃ¡ch trÆ°á»",
+                      "message":  "Laptop duoi 15 trieu cho hoc tap va code"
+                  },
+                  {
+                      "id":  "budget_accessory_01",
+                      "group":  "ngan_sach",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.2,
+                      "productCount":  3,
+                      "products":  [
+                                       "Belkin 27-inch Monitor Gen 1",
+                                       "Baseus 27-inch Monitor Gen 1",
+                                       "Ugreen 27-inch Monitor Gen 1"
+                                   ],
+                      "answerPreview":  "Theo cÃ¢u há»i cá»§a báº¡n, mÃ¬nh Äá» xuáº¥t báº¯t Äáº§u vá»i Laptop van phong pho bien. Báº¡n thuá»c nhÃ³m cÃ¢n báº±ng, nÃªn chá»n sáº£n pháº©m á»n Äá»nh, dá»\u0085 sá»­ dá»¥",
+                      "message":  "Goi y bo phu kien re de setup goc hoc tap"
+                  },
+                  {
+                      "id":  "budget_storage_01",
+                      "group":  "ngan_sach",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.85,
+                      "productCount":  3,
+                      "products":  [
+                                       "Baseus NVMe SSD 2TB Gen 2",
+                                       "Belkin NVMe SSD 2TB Gen 2",
+                                       "Ugreen NVMe SSD 2TB Gen 2"
+                                   ],
+                      "answerPreview":  "Theo cÃ¢u há»i cá»§a báº¡n, mÃ¬nh Äá» xuáº¥t báº¯t Äáº§u vá»i Smartphone tam trung dang mua 2024. Báº¡n thuá»c nhÃ³m cÃ¢n báº±ng, nÃªn chá»n sáº£n pháº©m á»n Äá»nh, dá»\u0085 ",
+                      "message":  "Toi can SSD gia re de nang cap may tinh"
+                  },
+                  {
+                      "id":  "budget_power_01",
+                      "group":  "ngan_sach",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.55,
+                      "productCount":  3,
+                      "products":  [
+                                       "Anker 65W GaN Charger",
+                                       "Belkin GaN Charger 100W Gen 2",
+                                       "Baseus GaN Charger 100W Gen 2"
+                                   ],
+                      "answerPreview":  "Theo cÃ¢u há»i cá»§a báº¡n, mÃ¬nh Äá» xuáº¥t báº¯t Äáº§u vá»i Huong dan chon mua dien thoai phu hop. Báº¡n thuá»c nhÃ³m cÃ¢n báº±ng, nÃªn chá»n sáº£n pháº©m á»n Äá»nh, dá",
+                      "message":  "Tu van sac nhanh gia mem cho dien thoai"
+                  },
+                  {
+                      "id":  "need_office_01",
+                      "group":  "nhu_cau",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.2,
+                      "productCount":  3,
+                      "products":  [
+                                       "Belkin 34-inch Ultrawide Monitor Gen 2",
+                                       "Belkin Webcam Full HD Gen 2",
+                                       "Belkin Mechanical Keyboard Gen 3"
+                                   ],
+                      "answerPreview":  "Minh ho tro tu van mua sam san pham cong nghe. Ban hay cho minh biet nhu cau (vi du: dien thoai/laptop/phu kien), ngan sach va uu tien de minh goi y dung hon.",
+                      "message":  "Toi can setup goc lam viec tai nha de hop zoom va lam excel"
+                  },
+                  {
+                      "id":  "need_video_01",
+                      "group":  "nhu_cau",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.4,
+                      "productCount":  3,
+                      "products":  [
+                                       "Baseus NVMe SSD 2TB Gen 2",
+                                       "Belkin NVMe SSD 2TB Gen 2",
+                                       "Ugreen NVMe SSD 2TB Gen 2"
+                                   ],
+                      "answerPreview":  "Theo cÃ¢u há»i cá»§a báº¡n, mÃ¬nh Äá» xuáº¥t báº¯t Äáº§u vá»i Laptop van phong pho bien. Báº¡n thuá»c nhÃ³m cÃ¢n báº±ng, nÃªn chá»n sáº£n pháº©m á»n Äá»nh, dá»\u0085 sá»­ dá»¥",
+                      "message":  "Goi y thiet bi de edit video 4k tai nha"
+                  },
+                  {
+                      "id":  "need_travel_01",
+                      "group":  "nhu_cau",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.247,
+                      "productCount":  3,
+                      "products":  [
+                                       "Laptop LG Gram 13",
+                                       "Laptop Gigabyte Aero Gaming",
+                                       "Laptop Gigabyte Aero Creator"
+                                   ],
+                      "answerPreview":  "Theo cÃ¢u há»i cá»§a báº¡n, mÃ¬nh Äá» xuáº¥t báº¯t Äáº§u vá»i Laptop van phong pho bien. Báº¡n thuá»c nhÃ³m cÃ¢n báº±ng, nÃªn chá»n sáº£n pháº©m á»n Äá»nh, dá»\u0085 sá»­ dá»¥",
+                      "message":  "Toi hay di cong tac, can laptop nhe pin lau"
+                  },
+                  {
+                      "id":  "need_stream_01",
+                      "group":  "nhu_cau",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.15,
+                      "productCount":  3,
+                      "products":  [
+                                       "Razer BlackShark V2 X",
+                                       "Webcam 1080p",
+                                       "Belkin 34-inch Ultrawide Monitor Gen 2"
+                                   ],
+                      "answerPreview":  "Minh ho tro tu van mua sam san pham cong nghe. Ban hay cho minh biet nhu cau (vi du: dien thoai/laptop/phu kien), ngan sach va uu tien de minh goi y dung hon.",
+                      "message":  "Toi muon livestream ban hang, can webcam va mic tot"
+                  },
+                  {
+                      "id":  "need_student_01",
+                      "group":  "nhu_cau",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.15,
+                      "productCount":  3,
+                      "products":  [
+                                       "Phone Realme 11 Pro",
+                                       "Laptop HP Pavilion",
+                                       "Laptop Lenovo IdeaPad"
+                                   ],
+                      "answerPreview":  "Theo cÃ¢u há»i cá»§a báº¡n, mÃ¬nh Äá» xuáº¥t báº¯t Äáº§u vá»i Laptop van phong pho bien. Báº¡n thuá»c nhÃ³m cÃ¢n báº±ng, nÃªn chá»n sáº£n pháº©m á»n Äá»nh, dá»\u0085 sá»­ dá»¥",
+                      "message":  "Goi y bo thiet bi cho sinh vien IT hoc online va code"
+                  },
+                  {
+                      "id":  "need_photo_01",
+                      "group":  "nhu_cau",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.15,
+                      "productCount":  3,
+                      "products":  [
+                                       "Phone Google Pixel 8 Pro",
+                                       "Phone Samsung A54",
+                                       "Phone Xiaomi 13T"
+                                   ],
+                      "answerPreview":  "Minh can them mot chut thong tin de tu van chinh xac hon. Ban cho minh biet ngan sach va uu tien chinh (camera, pin, hieu nang, man hinh hay do ben) nhe.",
+                      "message":  "Can dien thoai chup dem dep va pin tot de di du lich"
+                  }
+              ],
+    "chatUrl":  "http://localhost:3000/api/ai/chat",
+    "timeoutSec":  60,
+    "pairChecks":  [
+                       {
+                           "name":  "premium_vs_budget_phone",
+                           "pass":  true,
+                           "overlapRatio":  0,
+                           "maxAllowed":  0.34,
+                           "left":  "advice_phone_02",
+                           "right":  "budget_phone_01"
+                       },
+                       {
+                           "name":  "highend_vs_budget_laptop",
+                           "pass":  true,
+                           "overlapRatio":  0,
+                           "maxAllowed":  0.67,
+                           "left":  "cmp_laptop_01",
+                           "right":  "budget_laptop_01"
+                       }
+                   ],
+    "userId":  1,
+    "generatedAtUtc":  "2026-04-05T17:27:55.5406000Z"
+}

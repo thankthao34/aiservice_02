@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="600" height="600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+  <!-- Background with gradient -->
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#92400e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#000;stop-opacity:0.2" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main background -->
+  <rect width="600" height="600" fill="url(#grad)"/>
+  
+  <!-- Top accent bar with category -->
+  <rect width="600" height="80" fill="#f59e0b"/>
+  
+  <!-- Category label -->
+  <text x="30" y="55" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#92400e">
+    ACCESSORY
+  </text>
+  
+  <!-- Brand icon circle -->
+  <circle cx="500" cy="40" r="35" fill="#92400e"/>
+  <text x="500" y="55" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="white" text-anchor="middle">
+    BA
+  </text>
+  
+  <!-- Product name -->
+  <text x="300" y="250" font-family="Arial, sans-serif" font-size="42" font-weight="bold" fill="white" text-anchor="middle">
+    Baseus Power Bank 20
+  </text>
+  
+  <text x="300" y="300" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="#f59e0b" text-anchor="middle">
+    000mAh Gen 1
+  </text>
+  
+  <!-- Price -->
+  <text x="300" y="390" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f59e0b" text-anchor="middle">
+    $73
+  </text>
+  
+  <!-- Product ID (subtle) -->
+  <text x="300" y="550" font-family="Arial, sans-serif" font-size="18" fill="rgba(255,255,255,0.6)" text-anchor="middle">
+    Product #258 • 2026
+  </text>
+  
+  <!-- Decorative corner elements -->
+  <circle cx="50" cy="550" r="15" fill="#f59e0b" opacity="0.3"/>
+  <circle cx="550" cy="100" r="20" fill="#f59e0b" opacity="0.2"/>
+</svg>

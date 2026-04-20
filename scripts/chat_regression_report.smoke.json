@@ -1,0 +1,184 @@
+﻿{
+    "summary":  {
+                    "failed":  0,
+                    "passRate":  100,
+                    "byGroup":  {
+                                    "tu_van":  {
+                                                   "failed":  0,
+                                                   "total":  2,
+                                                   "passed":  2
+                                               },
+                                    "nhu_cau":  {
+                                                    "failed":  0,
+                                                    "total":  2,
+                                                    "passed":  2
+                                                },
+                                    "ngan_sach":  {
+                                                      "failed":  0,
+                                                      "total":  2,
+                                                      "passed":  2
+                                                  },
+                                    "so_sanh":  {
+                                                    "failed":  0,
+                                                    "total":  2,
+                                                    "passed":  2
+                                                }
+                                },
+                    "total":  8,
+                    "passed":  8
+                },
+    "profileDescription":  "Fast CI smoke checks on representative scenarios.",
+    "profile":  "smoke",
+    "cases":  [
+                  {
+                      "id":  "cmp_phone_01",
+                      "group":  "so_sanh",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.9,
+                      "productCount":  3,
+                      "products":  [
+                                       "Samsung S24 Ultra",
+                                       "iPhone 15 Pro",
+                                       "Infinix Zero Gen 1"
+                                   ],
+                      "answerPreview":  "So sÃ¡nh nhanh Samsung S24 Ultra vÃ  iPhone 15 Pro theo nhu cáº§u thá»±c táº¿: camera chá»¥p ÄÃªm vÃ  zoom thÆ°á»ng lá»£i tháº¿ hÆ¡n á» dÃ²ng Ultra; quay video á»n Äá»nh vÃ  ",
+                      "message":  "So sanh iPhone 15 Pro va Samsung S24 Ultra, nen chon may nao?"
+                  },
+                  {
+                      "id":  "cmp_laptop_01",
+                      "group":  "so_sanh",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.45,
+                      "productCount":  3,
+                      "products":  [
+                                       "Dell XPS 15",
+                                       "MacBook Pro M3",
+                                       "LG Gram 13"
+                                   ],
+                      "answerPreview":  "So sÃ¡nh nhanh Dell XPS 15 vÃ  MacBook Pro M3: náº¿u báº¡n Æ°u tiÃªn thiáº¿t káº¿ Äá» há»a, pin bá»n vÃ  há» sinh thÃ¡i Apple thÃ¬ nghiÃªng vá» MacBook Pro M3; náº¿u báº¡n cá",
+                      "message":  "So sanh MacBook Pro M3 va Dell XPS 15 cho cong viec do hoa"
+                  },
+                  {
+                      "id":  "advice_phone_02",
+                      "group":  "tu_van",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.55,
+                      "productCount":  3,
+                      "products":  [
+                                       "Google Pixel 8 Pro",
+                                       "Samsung S24 Ultra",
+                                       "iPhone 15 Pro"
+                                   ],
+                      "answerPreview":  "Theo cÃ¢u há»i cá»§a báº¡n, mÃ¬nh Äá» xuáº¥t báº¯t Äáº§u vá»i Huong dan chon mua dien thoai phu hop. Báº¡n thuá»c nhÃ³m cÃ¢n báº±ng, nÃªn chá»n sáº£n pháº©m á»n Äá»nh, dá",
+                      "message":  "Tu van cho toi dien thoai cao cap uu tien camera quay video"
+                  },
+                  {
+                      "id":  "advice_laptop_01",
+                      "group":  "tu_van",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.15,
+                      "productCount":  3,
+                      "products":  [
+                                       "Asus Vivobook",
+                                       "LG Gram 13",
+                                       "Gigabyte Aero Gaming"
+                                   ],
+                      "answerPreview":  "Theo cÃ¢u há»i cá»§a báº¡n, mÃ¬nh Äá» xuáº¥t báº¯t Äáº§u vá»i Laptop van phong pho bien. Báº¡n thuá»c nhÃ³m cÃ¢n báº±ng, nÃªn chá»n sáº£n pháº©m á»n Äá»nh, dá»\u0085 sá»­ dá»¥",
+                      "message":  "Toi can tu van laptop cho do hoa va pin tot"
+                  },
+                  {
+                      "id":  "budget_phone_01",
+                      "group":  "ngan_sach",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.55,
+                      "productCount":  3,
+                      "products":  [
+                                       "Realme 11 Pro",
+                                       "Samsung Galaxy A Pro",
+                                       "Realme Number Gen 1"
+                                   ],
+                      "answerPreview":  "Theo cÃ¢u há»i cá»§a báº¡n, mÃ¬nh Äá» xuáº¥t báº¯t Äáº§u vá»i Huong dan chon mua dien thoai phu hop. Báº¡n thuá»c nhÃ³m cÃ¢n báº±ng, nÃªn chá»n sáº£n pháº©m á»n Äá»nh, dá",
+                      "message":  "Goi y dien thoai re tien duoi 8 trieu"
+                  },
+                  {
+                      "id":  "budget_laptop_01",
+                      "group":  "ngan_sach",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.15,
+                      "productCount":  3,
+                      "products":  [
+                                       "HP Pavilion",
+                                       "Dell Inspiron 13",
+                                       "Lenovo IdeaPad"
+                                   ],
+                      "answerPreview":  "Minh can them mot chut thong tin de tu van chinh xac hon. Ban cho minh biet ngan sach va uu tien chinh (camera, pin, hieu nang, man hinh hay do ben) nhe.",
+                      "message":  "Laptop duoi 15 trieu cho hoc tap va code"
+                  },
+                  {
+                      "id":  "need_office_01",
+                      "group":  "nhu_cau",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.2,
+                      "productCount":  3,
+                      "products":  [
+                                       "Belkin 34-inch Ultrawide Monitor Gen 2",
+                                       "Belkin Webcam Full HD Gen 2",
+                                       "Belkin Mechanical Keyboard Gen 3"
+                                   ],
+                      "answerPreview":  "Minh ho tro tu van mua sam san pham cong nghe. Ban hay cho minh biet nhu cau (vi du: dien thoai/laptop/phu kien), ngan sach va uu tien de minh goi y dung hon.",
+                      "message":  "Toi can setup goc lam viec tai nha de hop zoom va lam excel"
+                  },
+                  {
+                      "id":  "need_photo_01",
+                      "group":  "nhu_cau",
+                      "pass":  true,
+                      "reasons":  [
+
+                                  ],
+                      "confidence":  0.15,
+                      "productCount":  3,
+                      "products":  [
+                                       "Google Pixel 8 Pro",
+                                       "Samsung A54",
+                                       "Xiaomi 13T"
+                                   ],
+                      "answerPreview":  "Minh can them mot chut thong tin de tu van chinh xac hon. Ban cho minh biet ngan sach va uu tien chinh (camera, pin, hieu nang, man hinh hay do ben) nhe.",
+                      "message":  "Can dien thoai chup dem dep va pin tot de di du lich"
+                  }
+              ],
+    "chatUrl":  "http://localhost:3000/api/ai/chat",
+    "timeoutSec":  60,
+    "pairChecks":  [
+                       {
+                           "name":  "premium_vs_budget_phone",
+                           "pass":  true,
+                           "overlapRatio":  0,
+                           "maxAllowed":  0.4,
+                           "left":  "advice_phone_02",
+                           "right":  "budget_phone_01"
+                       }
+                   ],
+    "userId":  1,
+    "generatedAtUtc":  "2026-04-05T17:21:18.9513691Z"
+}
