@@ -1,0 +1,203 @@
+[
+  {
+    "prompt": "Xin chào — bạn là ai và có thể giúp mình gì?",
+    "error": "HTTPConnectionPool(host='localhost', port=8000): Read timed out. (read timeout=15)"
+  },
+  {
+    "prompt": "Mình cần tư vấn laptop khoảng 20 triệu, ưu tiên hiệu năng cho học và làm văn phòng",
+    "status_code": 200,
+    "response": {
+      "answer": "Theo nhu cầu bạn hỏi, mình ưu tiên Dell P2723D vì hợp tiêu chí hieu nang, cong viec/do hoa. Phương án thay thế là Vinamilk Sparkling Drink 1L DO--204 nếu bạn muốn cân bằng thêm về giá.\n\nMinh da uu tien de xuat dua tren lich su xem/chon va noi dung gio hang hien tai de danh sach sat nhu cau hon.",
+      "segment": "normal_user",
+      "sources": [
+        "Goi y mua sam tong hop theo nhu cau va hanh vi gan day"
+      ],
+      "doc_ids": [],
+      "confidence": 0.08,
+      "product_links": [
+        {
+          "id": 24,
+          "name": "Dell P2723D",
+          "price": 279,
+          "url": "http://localhost:5273/product/24"
+        },
+        {
+          "id": 104,
+          "name": "Vinamilk Sparkling Drink 1L DO--204",
+          "price": 6.8,
+          "url": "http://localhost:5273/product/104"
+        },
+        {
+          "id": 97,
+          "name": "Pentel Notebook A5 Black Ink VAN-207",
+          "price": 13.5,
+          "url": "http://localhost:5273/product/97"
+        }
+      ],
+      "graph_meta": {
+        "neo4j": true,
+        "used_cart": false,
+        "used_search": false
+      }
+    }
+  },
+  {
+    "prompt": "Cửa hàng có bán kem chống nắng không? Nếu có, tư vấn loại cho da dầu.",
+    "status_code": 200,
+    "response": {
+      "answer": "Minh co the tu van nhieu nganh hang (dien tu, thoi trang, my pham, gia dung, me va be, thu cung...). Ban chi can noi mon ban dang can, muc ngan sach va uu tien chinh de minh loc de xuat sat hon.\n\nMinh da uu tien de xuat dua tren lich su xem/chon va noi dung gio hang hien tai de danh sach sat nhu cau hon.",
+      "segment": "normal_user",
+      "sources": [
+        "Goi y mua sam tong hop theo nhu cau va hanh vi gan day"
+      ],
+      "doc_ids": [],
+      "confidence": 0.08,
+      "product_links": [
+        {
+          "id": 24,
+          "name": "Dell P2723D",
+          "price": 279,
+          "url": "http://localhost:5273/product/24"
+        },
+        {
+          "id": 97,
+          "name": "Pentel Notebook A5 Black Ink VAN-207",
+          "price": 13.5,
+          "url": "http://localhost:5273/product/97"
+        },
+        {
+          "id": 94,
+          "name": "Thien Long Notebook A5 Black Ink VAN-204",
+          "price": 9,
+          "url": "http://localhost:5273/product/94"
+        }
+      ],
+      "graph_meta": {
+        "neo4j": true,
+        "used_cart": false,
+        "used_search": false
+      }
+    }
+  },
+  {
+    "prompt": "So sánh Samsung S24 và iPhone 15 — nếu ưu tiên chụp ảnh, chọn cái nào?",
+    "status_code": 200,
+    "response": {
+      "answer": "So sánh nhanh Dell P2723D và iPhone 15 Pro Max theo nhu cầu thực tế: camera chụp đêm và zoom thường lợi thế hơn ở dòng Ultra; quay video ổn định và hệ sinh thái lâu dài thường lợi thế hơn ở iPhone. Hiệu năng đều rất mạnh cho 3 năm sử dụng, bạn chọn theo ưu tiên camera/zoom hay video/iOS.",
+      "segment": "normal_user",
+      "sources": [
+        "Goi y mua sam tong hop theo nhu cau va hanh vi gan day"
+      ],
+      "doc_ids": [],
+      "confidence": 0.08,
+      "product_links": [
+        {
+          "id": 24,
+          "name": "Dell P2723D",
+          "price": 279,
+          "url": "http://localhost:5273/product/24"
+        },
+        {
+          "id": 1,
+          "name": "iPhone 15 Pro Max",
+          "price": 1199,
+          "url": "http://localhost:5273/product/1"
+        },
+        {
+          "id": 104,
+          "name": "Vinamilk Sparkling Drink 1L DO--204",
+          "price": 6.8,
+          "url": "http://localhost:5273/product/104"
+        }
+      ],
+      "graph_meta": {
+        "neo4j": true,
+        "used_cart": false,
+        "used_search": false
+      }
+    }
+  },
+  {
+    "prompt": "Gợi ý 3 tai nghe giá rẻ dưới 500k, có link sản phẩm và giá.",
+    "status_code": 200,
+    "response": {
+      "answer": "Theo câu hỏi của bạn, mình đề xuất bắt đầu với Sony WH-1000XM5. Bạn thuộc nhóm cân bằng, nên chọn sản phẩm ổn định, dễ sử dụng lâu dài. Bạn có thể cân nhắc: Sony WH-1000XM5, JBL Live Pro 2, Danh mục Điện Tử. Nếu bạn muốn, mình sẽ lọc tiếp theo mức giá, nhu cầu (học tập/giải trí/công việc) và thương hiệu bạn thích.\nTóm tắt tham khảo:\n- Sony WH-1000XM5: Sony WH-1000XM5 - Giá: 349đ. Loại: audio\n- JBL Live Pro 2: JBL Live Pro 2 - Giá: 139đ. Loại: audio\n- Danh mục Điện Tử: Ngành hàng Điện Tử có 24 sản phẩm: Anker 65W GaN Charger (49đ), Ugreen USB-C Hub 8 in 1 (45đ), Sony WH-1000XM5 (349đ), JBL Live Pro 2 (139đ), Sony ZV-E10 (799đ)...\n\nMinh da uu tien de xuat dua tren lich su xem/chon va noi dung gio hang hien tai de danh sach sat nhu cau hon.",
+      "segment": "normal_user",
+      "sources": [
+        "Sony WH-1000XM5",
+        "JBL Live Pro 2",
+        "Danh mục Điện Tử",
+        "Danh gia tai nghe/loa cho lam viec va giai tri"
+      ],
+      "doc_ids": [
+        "prod_7",
+        "prod_8",
+        "kb_cat_101"
+      ],
+      "confidence": 0.26,
+      "product_links": [
+        {
+          "id": 104,
+          "name": "Vinamilk Sparkling Drink 1L DO--204",
+          "price": 6.8,
+          "url": "http://localhost:5273/product/104"
+        },
+        {
+          "id": 24,
+          "name": "Dell P2723D",
+          "price": 279,
+          "url": "http://localhost:5273/product/24"
+        },
+        {
+          "id": 8,
+          "name": "JBL Live Pro 2",
+          "price": 139,
+          "url": "http://localhost:5273/product/8"
+        }
+      ],
+      "graph_meta": {
+        "neo4j": true,
+        "used_cart": false,
+        "used_search": false
+      }
+    }
+  },
+  {
+    "prompt": "Cho mình danh sách 5 sản phẩm bán chạy nhất mục audio kèm giá.",
+    "status_code": 200,
+    "response": {
+      "answer": "Minh can them mot chut thong tin de tu van chinh xac hon. Ban cho minh biet ngan sach va uu tien chinh (camera, pin, hieu nang, man hinh hay do ben) nhe.",
+      "segment": "normal_user",
+      "sources": [
+        "Goi y mua sam tong hop theo nhu cau va hanh vi gan day"
+      ],
+      "doc_ids": [],
+      "confidence": 0.08,
+      "product_links": [
+        {
+          "id": 24,
+          "name": "Dell P2723D",
+          "price": 279,
+          "url": "http://localhost:5273/product/24"
+        },
+        {
+          "id": 129,
+          "name": "Turtle Wax Car Shampoo 1L CHA-209",
+          "price": 77,
+          "url": "http://localhost:5273/product/129"
+        },
+        {
+          "id": 104,
+          "name": "Vinamilk Sparkling Drink 1L DO--204",
+          "price": 6.8,
+          "url": "http://localhost:5273/product/104"
+        }
+      ],
+      "graph_meta": {
+        "neo4j": true,
+        "used_cart": false,
+        "used_search": false
+      }
+    }
+  }
+]

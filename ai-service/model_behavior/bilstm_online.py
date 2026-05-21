@@ -18,7 +18,7 @@ BASE_DIR = Path(__file__).resolve().parent
 MODEL_PATH = BASE_DIR / "bilstm_online_model.keras"
 META_PATH = BASE_DIR / "bilstm_online_meta.json"
 
-PRODUCT_SERVICE_URL = os.getenv("PRODUCT_SERVICE_URL", "http://localhost:3002")
+PRODUCT_SERVICE_URL = os.getenv("PRODUCT_SERVICE_URL", "http://product-service:3002")
 MIN_USERS_TO_TRAIN = int(os.getenv("BILSTM_MIN_USERS", "1"))
 MAX_EVENTS = int(os.getenv("BILSTM_MAX_EVENTS", "80000"))
 MAX_LEN = int(os.getenv("BILSTM_SEQ_LEN", "40"))

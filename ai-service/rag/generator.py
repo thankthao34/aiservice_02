@@ -61,12 +61,28 @@ def _fallback_answer(query: str, context_docs: List[Dict], segment: str) -> str:
     if titles:
         suggest_line = f" Bạn có thể cân nhắc: {', '.join(titles)}."
 
-    sources_line = f"Nguồn tham khảo: {', '.join(titles)}." if titles else ""
+    # Include short summaries from the context documents to make fallback richer
+    doc_summaries = []
+    for d in context_docs[:3]:
+        title = d.get('title')
+        content = (d.get('content') or '').strip()
+        if not title or not content:
+            continue
+        # Take first 1-2 sentence-like fragments as a concise point
+        s = re.split(r'[\.\!\?]\s+', content)
+        first = s[0].strip() if s else ''
+        second = s[1].strip() if len(s) > 1 else ''
+        snippet = first
+        if second:
+            snippet = f"{first}. {second}"
+        doc_summaries.append(f"- {title}: {snippet}")
+
+    sources_line = f"\nTóm tắt tham khảo:\n{chr(10).join(doc_summaries)}" if doc_summaries else ""
     return (
         f"Theo câu hỏi của bạn, mình đề xuất bắt đầu với {top_title}."
         f" {segment_hint}{budget_hint}{suggest_line}"
         f" Nếu bạn muốn, mình sẽ lọc tiếp theo mức giá, nhu cầu (học tập/giải trí/công việc) và thương hiệu bạn thích."
-        f" {sources_line}"
+        f"{sources_line}"
     ).strip()
 
 

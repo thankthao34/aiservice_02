@@ -195,6 +195,22 @@ def _keyword_retrieve(query: str, segment: str = None, top_k: int = 3):
 
 
 def retrieve(query: str, segment: str = None, top_k: int = 3):
+    # Ensure index is loaded if available (supports lazy creation of kb_vectors.pkl)
+    try:
+        global index
+        if embedder is not None and index is None and VEC_PATH.exists():
+            try:
+                with open(VEC_PATH, "rb") as f:
+                    loaded = pickle.load(f)
+                # If documents changed after vectors were built we still prefer using the vectors
+                index = loaded
+                # small debug print to surface loading
+                print(f"[RAG LOAD] Loaded index with {len(index.get('documents', []))} docs from {VEC_PATH}")
+            except Exception:
+                index = None
+    except Exception:
+        pass
+
     if embedder is None or index is None:
         return _keyword_retrieve(query, segment=segment, top_k=top_k)
 

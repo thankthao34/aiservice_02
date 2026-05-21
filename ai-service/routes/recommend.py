@@ -8,8 +8,8 @@ from ai_core.behavior_store import get_events
 
 router = APIRouter()
 
-USER_SERVICE_URL = os.getenv('USER_SERVICE_URL', 'http://localhost:3001')
-PRODUCT_SERVICE_URL = os.getenv('PRODUCT_SERVICE_URL', 'http://localhost:3002')
+USER_SERVICE_URL = os.getenv('USER_SERVICE_URL', 'http://user-service:3001')
+PRODUCT_SERVICE_URL = os.getenv('PRODUCT_SERVICE_URL', 'http://product-service:3002')
 
 SEGMENT_PRODUCT_MAP = {
     'cheap_hunter': [15, 16, 17, 18],

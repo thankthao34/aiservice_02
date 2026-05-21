@@ -14,8 +14,8 @@ except Exception:  # pragma: no cover
     GraphDatabase = None
 
 router = APIRouter()
-USER_SERVICE_URL = os.getenv('USER_SERVICE_URL', 'http://localhost:3001')
-PRODUCT_SERVICE_URL = os.getenv('PRODUCT_SERVICE_URL', 'http://localhost:3002')
+USER_SERVICE_URL = os.getenv('USER_SERVICE_URL', 'http://user-service:3001')
+PRODUCT_SERVICE_URL = os.getenv('PRODUCT_SERVICE_URL', 'http://product-service:3002')
 FRONTEND_BASE_URL = os.getenv('FRONTEND_BASE_URL', 'http://localhost:5273')
 NEO4J_URI = os.getenv('NEO4J_URI', 'bolt://localhost:7687')
 NEO4J_USER = os.getenv('NEO4J_USER', 'neo4j')
@@ -211,6 +211,14 @@ def _neo4j_driver():
 def _try_rag_answer(query: str, segment: str):
     try:
         from rag.pipeline import rag_chat
+        # debug: inspect retriever/embedder/index state
+        try:
+            from rag import retriever as _retr
+            print(f"[RAG DEBUG] embedder is None={_retr.embedder is None}, index is None={_retr.index is None}")
+            if _retr.index is not None:
+                print(f"[RAG DEBUG] loaded docs={len(_retr.index.get('documents', []))}")
+        except Exception as _e:
+            print('[RAG DEBUG] failed to inspect retriever:', _e)
 
         result = rag_chat(query, segment)
         if not isinstance(result, dict):
@@ -419,6 +427,14 @@ def _fetch_products_cached():
 
     try:
         rows = requests.get(f"{PRODUCT_SERVICE_URL}/", timeout=4).json()
+        # debug: log product-service response summary
+        try:
+            print(f"[PRODUCT DEBUG] fetched {len(rows) if isinstance(rows, list) else 'N/A'} items from {PRODUCT_SERVICE_URL}")
+            if isinstance(rows, list) and rows:
+                sample = rows[:2]
+                print(f"[PRODUCT DEBUG] sample ids: {[r.get('id') for r in sample]}")
+        except Exception:
+            pass
         if isinstance(rows, list):
             _PRODUCT_CACHE['items'] = rows
             _PRODUCT_CACHE['ts'] = now
@@ -453,8 +469,13 @@ def _quality_bias(product: dict, query: str) -> float:
 
     # Prefer curated/base catalog entries to avoid odd synthetic variants.
     pid = int(product.get('id') or 0)
-    if 1 <= pid <= 40:
-        score += 3.0
+    guessed = None
+    try:
+        guessed = _guess_category(query)
+    except Exception:
+        guessed = None
+    # Remove curated boost entirely to avoid surfacing unrelated top catalog items
+    # (curated boosts were causing unrelated items to bubble up when category mismatch)
 
     # Penalize synthetic laptop/phone variants with noisy naming.
     if category in ('phone', 'laptop') and ' gen ' in f' {name} ':
@@ -581,11 +602,16 @@ def _score_product(product: dict, query: str, guessed_category: str, intents: li
     features = _extract_priority_features(query)
 
     if guessed_category and _product_sub_category(product) == guessed_category:
-        score += 4
+        score += 12
+    else:
+        # Stronger penalty when the product clearly mismatches the guessed sub-category
+        if guessed_category:
+            score -= 8
 
+    # stronger lexical boost for tokens that appear in name/description
     for w in _normalize(query).split(' '):
         if len(w) >= 3 and w in text:
-            score += 1
+            score += 2.2
 
     for intent in intents:
         for hint in INTENT_PRODUCT_HINTS.get(intent, []):
@@ -604,6 +630,13 @@ def _score_product(product: dict, query: str, guessed_category: str, intents: li
             score += 3
         if _product_sub_category(product) == 'phone':
             score -= 2
+
+    # Penalize when main category mismatches guessed mapping (less relevant)
+    if guessed_category:
+        guessed_main = SUBCATEGORY_MAIN_MAP.get(guessed_category)
+        prod_main = _product_main_category(product)
+        if guessed_main and prod_main and guessed_main != prod_main:
+            score -= 6
 
     rating = float(product.get('rating') or 0)
     score += min(2, rating / 2)
@@ -1041,6 +1074,18 @@ def _build_product_links(segment: str, query: str):
         force_category = None
         if 'phu kien' in q or 'phụ kiện' in q:
             force_category = 'accessory'
+        # direct keyword mapping to subcategories for stronger filtering
+        keyword_to_sub = {
+            'laptop': 'laptop', 'macbook': 'laptop', 'notebook': 'laptop',
+            'dien thoai': 'phone', 'iphone': 'phone', 'samsung': 'phone', 'pixel': 'phone',
+            'tai nghe': 'audio', 'headphone': 'audio', 'earbuds': 'audio',
+            'man hinh': 'monitor', 'monitor': 'monitor',
+            'camera': 'camera', 'ssd': 'storage', 'nvme': 'storage', 'hdd': 'storage',
+            'kem chong nang': 'cham-soc-da', 'chống nắng': 'cham-soc-da', 'chong nang': 'cham-soc-da',
+        }
+        for k, sub in keyword_to_sub.items():
+            if k in q and not force_category:
+                force_category = sub
         if guessed == 'laptop' and ('phu kien' in q or 'phụ kiện' in q):
             force_category = 'accessory'
         if any(i in intents for i in ['audio', 'storage', 'display', 'power']):
@@ -1049,15 +1094,34 @@ def _build_product_links(segment: str, query: str):
             force_category = guessed
 
         ranked_pool = all_products or segment_products
+
+        # If we do not infer any guessed sub-category, apply a lexical pre-filter
+        # to avoid returning unrelated top curated items. Only apply if query has tokens.
+        if not force_category and not guessed:
+            q_tokens = [t for t in q.split(' ') if len(t) >= 3]
+            if q_tokens:
+                filtered = []
+                for p in ranked_pool:
+                    txt = _normalize(f"{p.get('name','')} {p.get('description','')}")
+                    if any(t in txt for t in q_tokens):
+                        filtered.append(p)
+                if filtered:
+                    ranked_pool = filtered
         if force_category:
             ranked_pool = [p for p in ranked_pool if _product_sub_category(p) == force_category]
         elif guessed_main:
             ranked_pool = [p for p in ranked_pool if _product_main_category(p) == guessed_main]
         elif guessed:
-            ranked_pool = sorted(
-                ranked_pool,
-                key=lambda p: 0 if _product_sub_category(p) == guessed else 1,
-            )
+            # Force narrow to guessed sub-category. If none in current pool,
+            # immediately backfill from product-service for stricter relevance.
+            ranked_pool = [p for p in ranked_pool if _product_sub_category(p) == guessed]
+            if not ranked_pool:
+                try:
+                    category_rows = _fetch_products_by_category(main_category=guessed_main, sub_category=guessed)
+                    if category_rows:
+                        ranked_pool = category_rows
+                except Exception:
+                    ranked_pool = []
 
         if not ranked_pool:
             ranked_pool = all_products or segment_products
@@ -1087,8 +1151,17 @@ def _build_product_links(segment: str, query: str):
             reverse=True,
         )
 
-        # Keep segment-specific products as backup to avoid empty recommendations.
-        products = ranked + segment_products
+        # Use ranked results.
+        products = ranked
+
+        # If we guessed a specific sub-category but ranked is empty, try fetching directly from product-service.
+        if guessed and not products:
+            try:
+                category_rows = _fetch_products_by_category(main_category=guessed_main, sub_category=guessed)
+                if category_rows:
+                    products = category_rows
+            except Exception:
+                pass
 
     # Deduplicate by product id while preserving priority order.
     seen = set()
@@ -1128,6 +1201,9 @@ def _build_product_links(segment: str, query: str):
             products.append(p)
             if len(products) >= target_count:
                 break
+
+    if should_compare and products:
+        return _products_to_links(products, limit=target_count)
 
     if guessed == 'laptop' and _is_travel_laptop_query(query) and len(products) < max(3, target_count):
         catalog = all_products or segment_products or []
@@ -1305,6 +1381,61 @@ def _merge_links(primary: list, secondary: list, limit: int = 3):
     return out
 
 
+def _products_to_links(products: list, limit: int = 3):
+    out = []
+    for p in (products or [])[:max(1, int(limit))]:
+        pid = p.get('id')
+        if pid is None:
+            continue
+        out.append(
+            {
+                'id': pid,
+                'name': p.get('name'),
+                'price': p.get('price'),
+                'url': f"{FRONTEND_BASE_URL}/product/{pid}",
+            }
+        )
+    return out
+
+
+def _filter_links_by_intent(links: list, guessed: str | None, guessed_main: str | None):
+    if not links:
+        return []
+
+    if not guessed and not guessed_main:
+        return list(links)
+
+    products = _fetch_products_cached()
+    by_id = {}
+    for product in products:
+        pid = product.get('id')
+        if pid is None:
+            continue
+        try:
+            by_id[int(pid)] = product
+        except Exception:
+            continue
+
+    filtered = []
+    for link in links:
+        try:
+            pid = int(link.get('id'))
+        except Exception:
+            continue
+
+        product = by_id.get(pid)
+        if not product:
+            continue
+
+        if guessed and _product_sub_category(product) == guessed:
+            filtered.append(link)
+            continue
+        if guessed_main and _product_main_category(product) == guessed_main:
+            filtered.append(link)
+
+    return filtered
+
+
 @router.post('/chat')
 def chat(body: ChatBody):
     segment = 'normal_user'
@@ -1318,6 +1449,11 @@ def chat(body: ChatBody):
     if body.search_context:
         query_for_intent = f"{body.message} {body.search_context}".strip()
 
+    guessed_intent = _guess_category_intent(query_for_intent) or {}
+    guessed = guessed_intent.get('sub_category')
+    guessed_main = guessed_intent.get('main_category')
+    intents = _detect_intents(query_for_intent)
+
     # Default to 3 suggestions unless user explicitly asks for another count.
     desired_count = _extract_target_count(query_for_intent, default=3, max_items=5)
 
@@ -1329,10 +1465,13 @@ def chat(body: ChatBody):
         cart_product_ids=body.cart_product_ids,
         limit=desired_count,
     )
-    product_links = _merge_links(graph_links, base_links, limit=desired_count)
 
-    guessed = _guess_category(query_for_intent)
-    intents = _detect_intents(query_for_intent)
+    has_query_intent = bool(guessed or guessed_main or intents)
+    if has_query_intent:
+        graph_links = _filter_links_by_intent(graph_links, guessed, guessed_main)
+        product_links = _merge_links(base_links, graph_links, limit=desired_count)
+    else:
+        product_links = _merge_links(graph_links, base_links, limit=desired_count)
     confidence = _compute_match_confidence(product_links, query_for_intent, guessed, intents)
     rag_result = _try_rag_answer(query_for_intent, segment)
 
