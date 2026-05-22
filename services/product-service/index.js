@@ -186,6 +186,15 @@ function normalizeKey(value) {
   return String(value || '').trim().toLowerCase();
 }
 
+function normalizeText(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd');
+}
+
 function resolveCategoryInput(rawMainCategory, rawSubCategory, fallbackCategory) {
   const subCategory = normalizeKey(rawSubCategory || fallbackCategory);
   if (!subCategory) {
@@ -217,6 +226,106 @@ function categoryMetaFromRow(row) {
     mainCategoryLabel: subInfo?.mainLabel || row.main_category || 'electronics',
     subCategoryLabel: subInfo?.subLabel || subCategory
   };
+}
+
+const SEARCH_MAIN_CATEGORY_KEYWORDS = {
+  electronics: ['cong nghe', 'electronics', 'dien tu', 'do dien tu'],
+  fashion: ['thoi trang', 'fashion', 'ao', 'quan', 'giay dep'],
+  beauty: ['my pham', 'lam dep', 'beauty', 'son moi', 'kem nen'],
+  'home-living': ['nha cua', 'noi that', 'gia dung', 'home living'],
+  appliances: ['dien lanh', 'dieu hoa', 'tu lanh', 'may giat'],
+  'mom-baby': ['me va be', 'me be', 'so sinh', 'ta bim'],
+  'sports-outdoor': ['the thao', 'du lich', 'outdoor'],
+  'books-stationery': ['sach', 'van phong pham', 'truyen', 'stationery', 'book'],
+  grocery: ['bach hoa', 'do uong', 'thuc pham'],
+  'pet-care': ['thu cung', 'pet'],
+  automotive: ['o to', 'xe may', 'phu kien xe'],
+  'office-supplies': ['van phong', 'office supply', 'office']
+};
+
+const SEARCH_SUBCATEGORY_KEYWORDS = {
+  laptop: ['laptop', 'macbook', 'notebook'],
+  phone: ['dien thoai', 'phone', 'iphone', 'samsung', 'pixel', 'realme', 'xiaomi'],
+  mobile: ['mobile'],
+  tablet: ['tablet', 'ipad'],
+  audio: ['tai nghe', 'headphone', 'earbuds', 'loa', 'speaker'],
+  monitor: ['monitor', 'man hinh'],
+  camera: ['camera', 'may anh'],
+  storage: ['ssd', 'nvme', 'hdd', 'o cung', 'luu tru'],
+  networking: ['router', 'wifi', 'mesh'],
+  accessory: ['phu kien', 'chuot', 'mouse', 'ban phim', 'keyboard', 'charger', 'sac', 'webcam', 'hub', 'cable'],
+  ao: ['ao thun', 'ao so mi', 'ao khoac', 'ao'],
+  quan: ['quan jeans', 'quan tay', 'quan short', 'quan'],
+  'giay-dep': ['giay', 'dep', 'sneaker'],
+  'tui-xach': ['tui xach', 'tui deo', 'balo', 'vi'],
+  'phu-kien-thoi-trang': ['that lung', 'mu non', 'kinh mat', 'phu kien thoi trang'],
+  'son-moi': ['son', 'son moi', 'lipstick', 'lip tint'],
+  'kem-nen': ['kem nen', 'foundation', 'cushion'],
+  'cham-soc-da': ['serum', 'sua rua mat', 'duong am', 'cham soc da', 'skincare'],
+  'nuoc-hoa': ['nuoc hoa', 'perfume', 'mui huong'],
+  'do-bep': ['do bep', 'noi', 'chao', 'dao', 'thot'],
+  'noi-that': ['noi that', 'ban ghe', 'tu ke'],
+  'trang-tri-nha': ['trang tri nha', 'decor', 'den trang tri'],
+  'gia-dung': ['gia dung', 'am sieu toc', 'ban ui', 'may hut bui'],
+  'dieu-hoa': ['dieu hoa', 'may lanh'],
+  'tu-lanh': ['tu lanh'],
+  'may-giat': ['may giat'],
+  'may-loc-khong-khi': ['may loc khong khi', 'air purifier'],
+  'ta-bim': ['ta bim', 'bim', 'ta'],
+  'do-so-sinh': ['do so sinh', 'quan ao so sinh'],
+  'sua-bot': ['sua bot', 'sua cong thuc'],
+  'gym-fitness': ['gym', 'fitness', 'tap ta', 'yoga'],
+  'the-thao-ngoai-troi': ['the thao ngoai troi', 'bong da', 'cau long', 'chay bo'],
+  'phu-kien-du-lich': ['vali', 'balo du lich', 'phu kien du lich'],
+  sach: ['sach', 'truyen'],
+  'van-phong-pham': ['vo', 'but', 'so tay', 'van phong pham'],
+  'qua-luu-niem': ['qua luu niem', 'gift'],
+  'thuc-pham-kho': ['gao', 'mi', 'thuc pham kho'],
+  'do-uong': ['nuoc ngot', 'tra', 'ca phe', 'do uong'],
+  'do-an-vat': ['banh snack', 'do an vat'],
+  'thuc-an-thu-cung': ['thuc an thu cung', 'hat cho', 'pate meo'],
+  'phu-kien-thu-cung': ['vong co', 'day dat', 'cat ve sinh', 'phu kien thu cung'],
+  'phu-kien-xe': ['phu kien xe', 'dash cam', 'gia do dien thoai xe'],
+  'cham-soc-xe': ['cham soc xe', 'rua xe', 'bao duong xe'],
+  office: ['van phong', 'office'],
+  'ban-phim': ['ban phim', 'keyboard'],
+  chuot: ['chuot', 'mouse']
+};
+
+function resolveSearchIntent(rawSearch) {
+  const text = normalizeText(rawSearch);
+  if (!text) return null;
+
+  let subCategory = null;
+  let mainCategory = null;
+
+  for (const [subKey, keywords] of Object.entries(SEARCH_SUBCATEGORY_KEYWORDS)) {
+    const normalizedSub = normalizeText(subKey.replace(/-/g, ' '));
+    if (text === normalizedSub || text.includes(normalizedSub) || keywords.some((keyword) => text.includes(normalizeText(keyword)))) {
+      subCategory = subKey;
+      break;
+    }
+  }
+
+  if (subCategory) {
+    mainCategory = SUBCATEGORY_MAIN_MAP[subCategory] || null;
+  }
+
+  for (const [mainKey, keywords] of Object.entries(SEARCH_MAIN_CATEGORY_KEYWORDS)) {
+    const normalizedMain = normalizeText(mainKey.replace(/-/g, ' '));
+    if (text === normalizedMain || text.includes(normalizedMain) || keywords.some((keyword) => text.includes(normalizeText(keyword)))) {
+      mainCategory = mainKey;
+      break;
+    }
+  }
+
+  if (!mainCategory && subCategory) {
+    mainCategory = SUBCATEGORY_MAIN_MAP[subCategory] || null;
+  }
+
+  if (!mainCategory && !subCategory) return null;
+
+  return { mainCategory, subCategory };
 }
 
 const categoryImages = {
@@ -825,11 +934,26 @@ app.get('/', async (req, res) => {
 
     if (minPrice) { where.push('price >= ?'); values.push(Number(minPrice)); }
     if (maxPrice) { where.push('price <= ?'); values.push(Number(maxPrice)); }
-    if (search) { where.push('(name LIKE ? OR description LIKE ? OR brand LIKE ?)'); values.push(`%${search}%`, `%${search}%`, `%${search}%`); }
+    const searchIntent = resolveSearchIntent(search);
+    const searchLike = `%${search || ''}%`;
+    let orderSql = 'ORDER BY p.id DESC';
+    let orderValues = [];
+
+    if (search) {
+      if (searchIntent?.mainCategory) {
+        where.push('(main_category = ? OR sub_category = ? OR name LIKE ? OR description LIKE ? OR brand LIKE ?)');
+        values.push(searchIntent.mainCategory, searchIntent.subCategory || searchIntent.mainCategory, searchLike, searchLike, searchLike);
+        orderSql = 'ORDER BY CASE WHEN sub_category = ? THEN 0 WHEN main_category = ? THEN 1 WHEN name LIKE ? OR description LIKE ? OR brand LIKE ? THEN 2 ELSE 3 END, p.id DESC';
+        orderValues = [searchIntent.subCategory || searchIntent.mainCategory, searchIntent.mainCategory, searchLike, searchLike, searchLike];
+      } else {
+        where.push('(name LIKE ? OR description LIKE ? OR brand LIKE ?)');
+        values.push(searchLike, searchLike, searchLike);
+      }
+    }
 
     const rows = await all(`SELECT p.*, COALESCE(r.review_count, 0) AS review_count
       FROM products p LEFT JOIN (SELECT product_id, COUNT(*) AS review_count FROM reviews GROUP BY product_id) r
-      ON r.product_id = p.id ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY p.id DESC`, values);
+      ON r.product_id = p.id ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ${orderSql}`, [...values, ...orderValues]);
     res.json(rows);
   } catch (e) {
     res.status(500).json({ message: 'Query failed', error: e.message });

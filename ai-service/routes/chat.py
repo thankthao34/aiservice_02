@@ -600,13 +600,17 @@ def _score_product(product: dict, query: str, guessed_category: str, intents: li
     price = float(product.get('price') or 0)
     price_tier = _detect_price_tier(query)
     features = _extract_priority_features(query)
+    guessed_main = SUBCATEGORY_MAIN_MAP.get(guessed_category)
+    prod_main = _product_main_category(product)
+    prod_sub = _product_sub_category(product)
 
-    if guessed_category and _product_sub_category(product) == guessed_category:
-        score += 12
-    else:
-        # Stronger penalty when the product clearly mismatches the guessed sub-category
-        if guessed_category:
-            score -= 8
+    if guessed_category:
+        if prod_sub == guessed_category:
+            score += 12
+        elif guessed_main and prod_main == guessed_main:
+            score += 7
+        else:
+            score -= 2
 
     # stronger lexical boost for tokens that appear in name/description
     for w in _normalize(query).split(' '):
@@ -626,17 +630,14 @@ def _score_product(product: dict, query: str, guessed_category: str, intents: li
 
     # For workspace/setup queries, strongly prefer accessories over phones.
     if 'workspace' in intents:
-        if _product_sub_category(product) == 'accessory':
+        if prod_sub == 'accessory':
             score += 3
-        if _product_sub_category(product) == 'phone':
+        if prod_sub == 'phone':
             score -= 2
 
     # Penalize when main category mismatches guessed mapping (less relevant)
-    if guessed_category:
-        guessed_main = SUBCATEGORY_MAIN_MAP.get(guessed_category)
-        prod_main = _product_main_category(product)
-        if guessed_main and prod_main and guessed_main != prod_main:
-            score -= 6
+    if guessed_main and prod_main and guessed_main != prod_main:
+        score -= 2.5
 
     rating = float(product.get('rating') or 0)
     score += min(2, rating / 2)
@@ -1090,7 +1091,9 @@ def _build_product_links(segment: str, query: str):
             force_category = 'accessory'
         if any(i in intents for i in ['audio', 'storage', 'display', 'power']):
             force_category = 'accessory'
-        if guessed and not force_category:
+        if guessed_main and not force_category:
+            force_category = guessed_main
+        elif guessed and not force_category:
             force_category = guessed
 
         ranked_pool = all_products or segment_products
@@ -1176,12 +1179,12 @@ def _build_product_links(segment: str, query: str):
 
     if not products:
         fallback = segment_products or all_products or []
-        if guessed:
-            narrowed = [p for p in fallback if _product_sub_category(p) == guessed]
+        if guessed_main:
+            narrowed = [p for p in fallback if _product_main_category(p) == guessed_main]
             if narrowed:
                 fallback = narrowed
-        elif guessed_main:
-            narrowed = [p for p in fallback if _product_main_category(p) == guessed_main]
+        elif guessed:
+            narrowed = [p for p in fallback if _product_sub_category(p) == guessed]
             if narrowed:
                 fallback = narrowed
         products = fallback
@@ -1189,7 +1192,9 @@ def _build_product_links(segment: str, query: str):
     # If category filter is too strict and yields too few items, backfill from same category catalog.
     if guessed and len(products) < target_count:
         catalog = all_products or segment_products or []
-        extras = [p for p in catalog if _product_sub_category(p) == guessed]
+        extras = [p for p in catalog if _product_main_category(p) == guessed_main]
+        if not extras:
+            extras = [p for p in catalog if _product_sub_category(p) == guessed]
         if len(extras) < target_count:
             category_rows = _fetch_products_by_category(main_category=guessed_main, sub_category=guessed)
             if category_rows:
@@ -1427,10 +1432,10 @@ def _filter_links_by_intent(links: list, guessed: str | None, guessed_main: str 
         if not product:
             continue
 
-        if guessed and _product_sub_category(product) == guessed:
+        if guessed_main and _product_main_category(product) == guessed_main:
             filtered.append(link)
             continue
-        if guessed_main and _product_main_category(product) == guessed_main:
+        if guessed and _product_sub_category(product) == guessed:
             filtered.append(link)
 
     return filtered

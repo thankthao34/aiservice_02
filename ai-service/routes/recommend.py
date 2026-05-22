@@ -386,10 +386,10 @@ def _product_matches_intent(product: dict, intent: dict):
         return True
 
     main_category, sub_category = _resolve_product_categories(product)
-    if intent.get('sub_category'):
-        return sub_category == intent['sub_category']
-    if intent.get('main_category'):
-        return main_category == intent['main_category']
+    if intent.get('main_category') and main_category != intent['main_category']:
+        return False
+    if intent.get('sub_category') and sub_category != intent['sub_category'] and main_category != intent.get('main_category'):
+        return False
     return True
 
 
@@ -435,12 +435,15 @@ def _score_product(product: dict, query: str, intent: dict, budget_usd):
     score = 0.0
     main_category, sub_category = _resolve_product_categories(product)
 
-    if intent and intent.get('sub_category') and sub_category == intent['sub_category']:
-        score += 6.0
-    elif intent and intent.get('main_category') and main_category == intent['main_category']:
-        score += 3.0
-    elif intent:
-        score -= 2.5
+    if intent:
+        if intent.get('main_category') and main_category == intent['main_category']:
+            score += 4.0
+        if intent.get('sub_category') and sub_category == intent['sub_category']:
+            score += 5.0
+        if intent.get('main_category') and main_category != intent['main_category']:
+            score -= 1.5
+        elif intent.get('sub_category') and sub_category != intent['sub_category']:
+            score -= 0.5
 
     q = _normalize(query)
     for token in q.split(' '):

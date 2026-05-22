@@ -6,7 +6,7 @@ export default function CartDrawer() {
   const { items, total } = useCart();
 
   return (
-    <section className="card">
+    <section className="card quick-cart">
       <h3>Quick Cart</h3>
       <p>{items.length} products</p>
       <p>Total: {formatPriceVndFromUsd(total)}</p>

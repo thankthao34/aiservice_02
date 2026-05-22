@@ -65,24 +65,6 @@ export default function ChatBot() {
             {!user && <span>Đăng nhập để sử dụng</span>}
           </div>
           <div className="chat-body">
-            {user && (
-              <div className="chat-quick-actions">
-                <button
-                  className="btn ghost"
-                  onClick={() => send('Goi y san pham dua tren tim kiem gan day cua toi')}
-                  disabled={loading}
-                >
-                  Goi y theo Search
-                </button>
-                <button
-                  className="btn ghost"
-                  onClick={() => send('Tu van danh sach san pham phu hop voi gio hang hien tai')}
-                  disabled={loading}
-                >
-                  Goi y theo Gio hang
-                </button>
-              </div>
-            )}
             {messages.map((m, idx) => (
               <div key={idx} className={`msg ${m.role}`}>
                 <p>{m.text}</p>
