@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { aiService } from '../services/aiService';
 import { useAuth } from '../context/AuthContext';
 import { formatPriceVndFromUsd } from '../utils/currency';
+import { getCartProductIdsKey } from '../utils/cartStorage';
 
 export default function ChatBot() {
   const { user } = useAuth();
@@ -23,7 +24,7 @@ export default function ChatBot() {
     try {
       let cartProductIds = [];
       try {
-        const raw = localStorage.getItem('nexus_last_cart_product_ids') || '[]';
+        const raw = localStorage.getItem(getCartProductIdsKey(user)) || '[]';
         cartProductIds = JSON.parse(raw);
       } catch {
         cartProductIds = [];

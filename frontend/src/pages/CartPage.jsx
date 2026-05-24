@@ -1,9 +1,59 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import ProductCard from '../components/ProductCard';
+import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { aiService } from '../services/aiService';
 import { formatPriceVndFromUsd } from '../utils/currency';
 
 export default function CartPage() {
+  const { user } = useAuth();
   const { items, updateQty, total } = useCart();
+  const [recommendations, setRecommendations] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!items.length) {
+      setRecommendations([]);
+      return () => {};
+    }
+
+    const timer = window.setTimeout(async () => {
+      try {
+        const usedIds = new Set(items.map((item) => item.id));
+        const response = await Promise.all(items.map(async (item) => {
+          const recRes = await aiService.recommend(user?.id || 0, {
+            message: `Goi y san pham lien quan den ${item.name} (${item.category}) trong gio hang`,
+            cartProductIds: [item.id],
+            limit: 3
+          });
+          return recRes.data.products || [];
+        }));
+
+        const merged = [];
+        for (const group of response) {
+          for (const product of group) {
+            if (!product || usedIds.has(product.id) || merged.some((item) => item.id === product.id)) continue;
+            merged.push(product);
+            if (merged.length >= 10) break;
+          }
+          if (merged.length >= 10) break;
+        }
+
+        if (!cancelled) {
+          setRecommendations(merged);
+        }
+      } catch {
+        if (!cancelled) setRecommendations([]);
+      }
+    }, 150);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [items, user?.id]);
 
   return (
     <section className="cart-page container main-content">
@@ -35,7 +85,11 @@ export default function CartPage() {
               </div>
 
               <div className="cart-item-actions">
-                <button type="button" className="btn-ghost small" aria-label={`Remove ${it.name}`} onClick={() => updateQty(it.id, 0)}>🗑️</button>
+                <button type="button" className="btn-ghost small" aria-label={`Remove ${it.name}`} onClick={() => updateQty(it.id, 0)}>
+                  <svg className="icon-trash" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M3 6h18v2H3V6zm2 3h14l-1 12H6L5 9zm5-6h4l1 2H9l1-2z" />
+                  </svg>
+                </button>
               </div>
             </div>
           ))}
@@ -50,6 +104,27 @@ export default function CartPage() {
           </div>
         </aside>
       </div>
+
+      {!!items.length && (
+        <section className="cart-recommendations">
+          <div className="section-head">
+            <div>
+              <h2>Sản phẩm gợi ý cho giỏ hàng</h2>
+              <p>Gợi ý được gộp từ các món đang có trong giỏ, thường hiển thị khoảng 10 món sau khi khử trùng lặp.</p>
+            </div>
+          </div>
+
+          {!!recommendations.length ? (
+            <div className="products-grid">
+              {recommendations.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <p className="cart-recommendations-empty">Chưa có gợi ý phù hợp, hệ thống sẽ tự cập nhật khi đủ dữ liệu.</p>
+          )}
+        </section>
+      )}
     </section>
   );
 }

@@ -7,6 +7,7 @@ export const productService = {
   byIds: (ids) => http.get('/products/by-ids', { params: { ids: ids.join(',') } }),
   categories: () => http.get('/products/categories'),
   reviews: (productId) => http.get(`/products/${productId}/reviews`),
+  adminReviews: () => http.get('/products/admin/reviews'),
   userReviews: (userId) => http.get(`/products/reviews/user/${userId}`),
   addReview: (productId, payload) => http.post(`/products/${productId}/reviews`, payload),
   adminList: () => http.get('/products/admin/products'),

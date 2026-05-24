@@ -4,36 +4,28 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { productService } from '../services/productService';
 import { formatPriceVndFromUsd } from '../utils/currency';
+import { readSearchHistory, saveSearchHistory } from '../utils/searchStorage';
 
-const SEARCH_HISTORY_KEY = 'nexus_search_history';
 const MAX_SEARCH_HISTORY = 5;
-
-function readSearchHistory() {
-  try {
-    const raw = localStorage.getItem(SEARCH_HISTORY_KEY) || '[]';
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.slice(0, MAX_SEARCH_HISTORY) : [];
-  } catch {
-    return [];
-  }
-}
+const MAX_HISTORY_RECOMMENDATIONS = 2;
+const MAX_TYPED_RECOMMENDATIONS = 10;
 
 function getSuggestionGroups(searchValue, searchHistory) {
   const typed = String(searchValue || '').trim();
   if (typed) {
-    return [{ term: typed, limit: 10 }];
+    return [{ term: typed, limit: MAX_TYPED_RECOMMENDATIONS }];
   }
 
   const seeds = Array.isArray(searchHistory)
     ? searchHistory.map((item) => String(item || '').trim()).filter(Boolean).slice(0, MAX_SEARCH_HISTORY)
     : [];
   if (seeds.length) {
-    return seeds.map((term) => ({ term, limit: 2 }));
+    return seeds.map((term) => ({ term, limit: MAX_HISTORY_RECOMMENDATIONS }));
   }
 
   try {
     const last = String(localStorage.getItem('nexus_last_search_query') || '').trim();
-    return last ? [{ term: last, limit: 10 }] : [];
+    return last ? [{ term: last, limit: MAX_TYPED_RECOMMENDATIONS }] : [];
   } catch {
     return [];
   }
@@ -49,8 +41,8 @@ export default function Navbar() {
   const [searchSuggestions, setSearchSuggestions] = useState([]);
 
   useEffect(() => {
-    setSearchHistory(readSearchHistory());
-  }, []);
+    setSearchHistory(readSearchHistory(user));
+  }, [user]);
 
   useEffect(() => {
     if (!searchOpen) return undefined;
@@ -80,9 +72,12 @@ export default function Navbar() {
               products: (res.data || []).slice(0, limit)
             };
           }))
-          : [{ term: 'featured', products: await productService.featured().then((res) => (res.data || []).slice(0, 10)).catch(() => []) }];
+          : [{
+            term: 'featured',
+            products: await productService.featured().then((res) => (res.data || []).slice(0, MAX_TYPED_RECOMMENDATIONS)).catch(() => [])
+          }];
         if (!cancelled) {
-          setSearchSuggestions(response);
+          setSearchSuggestions(response.filter((group) => group.products.length));
         }
       } catch {
         if (!cancelled) setSearchSuggestions([]);
@@ -97,12 +92,22 @@ export default function Navbar() {
 
   const submitSearch = (rawTerm) => {
     const term = String(rawTerm || '').trim();
+
+    if (!term) {
+      localStorage.removeItem('nexus_last_search_query');
+      window.dispatchEvent(new CustomEvent('nexus-search-submit', { detail: '' }));
+      setSearchValue('');
+      setSearchOpen(false);
+      navigate('/');
+      return;
+    }
+
     if (term.length < 2) return;
 
     localStorage.setItem('nexus_last_search_query', term);
     setSearchHistory((prev) => {
       const next = [term, ...prev.filter((item) => item.toLowerCase() !== term.toLowerCase())].slice(0, MAX_SEARCH_HISTORY);
-      localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(next));
+      saveSearchHistory(user, next);
       return next;
     });
 
@@ -115,7 +120,7 @@ export default function Navbar() {
   const removeHistoryItem = (term) => {
     const next = searchHistory.filter((item) => item !== term);
     setSearchHistory(next);
-    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(next));
+    saveSearchHistory(user, next);
   };
 
   const onLogout = () => {
@@ -142,11 +147,11 @@ export default function Navbar() {
                 value={searchValue}
                 onFocus={() => {
                   setSearchOpen(true);
-                  setSearchHistory(readSearchHistory());
+                  setSearchHistory(readSearchHistory(user));
                 }}
                 onClick={() => {
                   setSearchOpen(true);
-                  setSearchHistory(readSearchHistory());
+                  setSearchHistory(readSearchHistory(user));
                 }}
                 onChange={(e) => {
                   setSearchValue(e.target.value);

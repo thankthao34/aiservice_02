@@ -136,7 +136,8 @@ app.post('/create', async (req, res) => {
       }
       total += Number(p.price) * quantity;
       return {
-        product_id: Number(i.product_id),
+        // store authoritative product id from product service to avoid ID mismatches
+        product_id: Number(p.id),
         product_name: p.name,
         product_category: p.category,
         quantity,

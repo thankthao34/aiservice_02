@@ -2,6 +2,7 @@ import json
 import pickle
 import re
 import unicodedata
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -194,39 +195,25 @@ def _keyword_retrieve(query: str, segment: str = None, top_k: int = 3):
     return picked
 
 
-def retrieve(query: str, segment: str = None, top_k: int = 3):
-    # Ensure index is loaded if available (supports lazy creation of kb_vectors.pkl)
-    try:
-        global index
-        if embedder is not None and index is None and VEC_PATH.exists():
-            try:
-                with open(VEC_PATH, "rb") as f:
-                    loaded = pickle.load(f)
-                # If documents changed after vectors were built we still prefer using the vectors
-                index = loaded
-                # small debug print to surface loading
-                print(f"[RAG LOAD] Loaded index with {len(index.get('documents', []))} docs from {VEC_PATH}")
-            except Exception:
-                index = None
-    except Exception:
-        pass
-
+@lru_cache(maxsize=1024)
+def _retrieve_cached(normalized_query: str, segment: str, top_k: int):
     if embedder is None or index is None:
-        return _keyword_retrieve(query, segment=segment, top_k=top_k)
+        return tuple(_keyword_retrieve(normalized_query, segment=segment, top_k=top_k))
 
-    query_vec = embedder.encode([query])
-    sims = cosine_similarity(query_vec, index["embeddings"])[0]
+    query_vec = embedder.encode([normalized_query], normalize_embeddings=True)
+    sims = np.dot(query_vec, index["embeddings"].T)[0]
     ranked = np.argsort(sims)[::-1]
     results = []
-    focus_terms = _extract_focus_terms(query)
+    focus_terms = _extract_focus_terms(normalized_query)
     has_brand_focus = any(t in BRAND_FOCUS_TERMS for t in focus_terms)
+
     for idx in ranked:
         doc = index["documents"][idx]
         semantic_score = float(sims[idx])
-        lexical_score = _lexical_score(query, doc)
+        lexical_score = _lexical_score(normalized_query, doc)
         focus_hits = _focus_match_count(doc, focus_terms)
 
-        score = 0.64 * semantic_score + 0.30 * lexical_score + _segment_bonus(doc, segment) + _topic_score(query, doc)
+        score = 0.64 * semantic_score + 0.30 * lexical_score + _segment_bonus(doc, segment) + _topic_score(normalized_query, doc)
 
         if has_brand_focus and focus_hits == 0:
             score -= 0.28
@@ -234,7 +221,7 @@ def retrieve(query: str, segment: str = None, top_k: int = 3):
         results.append({"doc": doc, "score": score, "focus_hits": focus_hits})
 
     results.sort(key=lambda x: x["score"], reverse=True)
-    q_topics = _infer_topics(query)
+    q_topics = _infer_topics(normalized_query)
 
     picked = []
     if has_brand_focus:
@@ -242,7 +229,7 @@ def retrieve(query: str, segment: str = None, top_k: int = 3):
         for r in focus_first:
             picked.append(r["doc"])
             if len(picked) >= top_k:
-                return picked
+                return tuple(picked)
 
     if q_topics:
         topic_first = []
@@ -263,7 +250,7 @@ def retrieve(query: str, segment: str = None, top_k: int = 3):
             if len(picked) >= top_k:
                 break
         if picked:
-            return picked[:top_k]
+            return tuple(picked[:top_k])
 
     for r in results:
         d = r["doc"]
@@ -272,4 +259,28 @@ def retrieve(query: str, segment: str = None, top_k: int = 3):
         picked.append(d)
         if len(picked) >= top_k:
             break
-    return picked
+    return tuple(picked)
+
+
+def retrieve(query: str, segment: str = None, top_k: int = 3):
+    # Ensure index is loaded if available (supports lazy creation of kb_vectors.pkl)
+    try:
+        global index
+        if embedder is not None and index is None and VEC_PATH.exists():
+            try:
+                with open(VEC_PATH, "rb") as f:
+                    loaded = pickle.load(f)
+                # If documents changed after vectors were built we still prefer using the vectors
+                index = loaded
+                # small debug print to surface loading
+                print(f"[RAG LOAD] Loaded index with {len(index.get('documents', []))} docs from {VEC_PATH}")
+            except Exception:
+                index = None
+    except Exception:
+        pass
+
+    normalized_query = _normalize(query)
+    if not normalized_query:
+        return []
+
+    return list(_retrieve_cached(normalized_query, (segment or '').strip(), int(top_k)))

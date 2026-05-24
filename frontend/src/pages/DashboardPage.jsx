@@ -7,6 +7,7 @@ import { productService } from '../services/productService';
 import { aiService } from '../services/aiService';
 import SegmentBadge from '../components/SegmentBadge';
 import { formatPriceVndFromUsd } from '../utils/currency';
+import { getCartItemsKey, getCartProductIdsKey } from '../utils/cartStorage';
 
 const TABS = {
   orders: 'Don hang',
@@ -25,7 +26,7 @@ export default function DashboardPage() {
   const [suggestions, setSuggestions] = useState([]);
   const [activeTab, setActiveTab] = useState('orders');
   const [reviewDrafts, setReviewDrafts] = useState({});
-  const [reviewedByItem, setReviewedByItem] = useState({});
+  const [reviewedByProduct, setReviewedByProduct] = useState({});
 
   const defaultAddress = useMemo(
     () => addresses.find((a) => Number(a.is_default) === 1) || null,
@@ -50,23 +51,24 @@ export default function DashboardPage() {
 
     const reviewedMap = {};
     for (const review of userReviewsRes.data || []) {
-      const mapKey = `${review.order_id}-${review.product_id}`;
+      // key by order_id when available so each order can have its own review
+      const mapKey = review.order_id ? `${review.order_id}` : `${review.product_id}`;
       reviewedMap[mapKey] = review;
     }
-    setReviewedByItem(reviewedMap);
+    setReviewedByProduct(reviewedMap);
 
     const recommendationQuery = '';
     const budgetUsd = profileRes.data?.avg_price ? Number(profileRes.data.avg_price) * 1.2 : undefined;
     let cartProductIds = [];
     try {
-      const raw = localStorage.getItem('nexus_last_cart_product_ids') || '[]';
+      const raw = localStorage.getItem(getCartProductIdsKey(user)) || '[]';
       const parsed = JSON.parse(raw);
       cartProductIds = Array.isArray(parsed) && parsed.length
         ? parsed.map((id) => Number(id)).filter((id) => Number.isFinite(id))
         : [];
 
       if (!cartProductIds.length) {
-        const rawItems = localStorage.getItem('cart_items') || '[]';
+        const rawItems = localStorage.getItem(getCartItemsKey(user)) || '[]';
         const items = JSON.parse(rawItems);
         if (Array.isArray(items)) {
           cartProductIds = items
@@ -97,7 +99,7 @@ export default function DashboardPage() {
       setPurchased([]);
       setAddresses([]);
       setSuggestions([]);
-      setReviewedByItem({});
+      setReviewedByProduct({});
     });
   }, [user]);
 
@@ -112,23 +114,28 @@ export default function DashboardPage() {
   };
 
   const submitPurchasedReview = async (item) => {
-    const draft = reviewDrafts[`${item.order_id}-${item.product_id}`];
+    const reviewKey = item.order_id ? `${item.order_id}` : `${item.product_id}`;
+    const draft = reviewDrafts[reviewKey];
     if (!draft || !draft.comment) return;
 
-    await productService.addReview(item.product_id, {
-      user_id: user.id,
-      user_name: user.name,
-      rating: Number(draft.rating || 5),
-      comment: draft.comment,
-      order_id: item.order_id
-    });
+    try {
+      await productService.addReview(item.product_id, {
+        user_id: user.id,
+        user_name: user.name,
+        rating: Number(draft.rating || 5),
+        comment: draft.comment,
+        order_id: item.order_id
+      });
 
-    setReviewDrafts((prev) => {
-      const next = { ...prev };
-      delete next[`${item.order_id}-${item.product_id}`];
-      return next;
-    });
-    await load();
+      setReviewDrafts((prev) => {
+        const next = { ...prev };
+        delete next[reviewKey];
+        return next;
+      });
+      await load();
+    } catch (error) {
+      alert(error?.response?.data?.message || 'Khong the gui danh gia');
+    }
   };
 
   if (!profile) return <p>Loading dashboard...</p>;
@@ -167,17 +174,31 @@ export default function DashboardPage() {
             <h2>Tab xem tat ca don hang</h2>
             {!orders.length && <p>Ban chua co don hang nao.</p>}
             {orders.map((o) => (
-              <div className="history-item block-item" key={o.id}>
-                <div className="row">
-                  <strong>Don #{o.id}</strong>
+              <div className="history-item order-history-row" key={o.id}>
+                <div className="order-history-col order-history-id">
+                  <strong>Đơn #{o.id}</strong>
                   <span className="chip">{o.status}</span>
                 </div>
-                <p>{formatPriceVndFromUsd(o.total)} - {o.created_at}</p>
-                <small>Giao den: {o.receiver_name} - {o.receiver_phone}</small>
-                <small>{o.shipping_address}, {o.shipping_ward}, {o.shipping_district}, {o.shipping_city}</small>
-                {(o.items || []).map((item) => (
-                  <p key={item.id}>- {item.product_name} ({item.product_category}) x {item.quantity}</p>
-                ))}
+
+                <div className="order-history-col order-history-total">
+                  <strong>{formatPriceVndFromUsd(o.total)}</strong>
+                  <span>{o.created_at}</span>
+                </div>
+
+                <div className="order-history-col order-history-address">
+                  <strong>{o.receiver_name}</strong>
+                  <span>{o.receiver_phone}</span>
+                  <span>{o.shipping_address}, {o.shipping_ward}, {o.shipping_district}, {o.shipping_city}</span>
+                </div>
+
+                <div className="order-history-col order-history-products">
+                  {(o.items || []).map((item) => (
+                    <div className="order-history-product" key={item.id}>
+                      <span className="order-history-product-name">{item.product_name}</span>
+                      <span className="order-history-product-meta">{item.product_category} · SL: {item.quantity}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
@@ -189,8 +210,9 @@ export default function DashboardPage() {
             {!purchased.length && <p>Chua co don hoan thanh nao de danh gia.</p>}
             {purchased.map((item) => {
               const key = `${item.order_id}-${item.product_id}`;
-              const draft = reviewDrafts[key] || { rating: 5, comment: '' };
-              const reviewed = reviewedByItem[key];
+              const reviewKey = item.order_id ? `${item.order_id}` : `${item.product_id}`;
+              const draft = reviewDrafts[reviewKey] || { rating: 5, comment: '' };
+              const reviewed = reviewedByProduct[reviewKey];
               return (
                 <div className="history-item block-item" key={key}>
                   <div className="row">
@@ -210,7 +232,7 @@ export default function DashboardPage() {
                         value={draft.rating}
                         onChange={(e) => setReviewDrafts((prev) => ({
                           ...prev,
-                          [key]: { ...draft, rating: Number(e.target.value) }
+                          [reviewKey]: { ...draft, rating: Number(e.target.value) }
                         }))}
                       >
                         <option value={5}>5 sao</option>
@@ -224,7 +246,7 @@ export default function DashboardPage() {
                         value={draft.comment}
                         onChange={(e) => setReviewDrafts((prev) => ({
                           ...prev,
-                          [key]: { ...draft, comment: e.target.value }
+                          [reviewKey]: { ...draft, comment: e.target.value }
                         }))}
                       />
                       <button className="btn neon" onClick={() => submitPurchasedReview(item)}>Danh gia</button>

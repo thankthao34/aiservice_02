@@ -102,20 +102,8 @@ export default function AdminPage() {
     setCustomers(usersRes.data);
     setOrders(ordersRes.data);
 
-    const reviewResponses = await Promise.all(
-      productsRes.data.map((p) =>
-        productService
-          .reviews(p.id)
-          .then((r) => ({ product: p, reviews: r.data }))
-          .catch(() => ({ product: p, reviews: [] }))
-      )
-    );
-
-    const reviews = reviewResponses.flatMap((entry) =>
-      entry.reviews.map((rv) => ({ ...rv, product_name: entry.product.name, product_id: entry.product.id }))
-    );
-
-    setAllProductReviews(reviews.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))));
+    const reviewsRes = await productService.adminReviews();
+    setAllProductReviews((reviewsRes.data || []).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))));
   };
 
   useEffect(() => {
@@ -304,60 +292,192 @@ export default function AdminPage() {
         {activeTab === 'products' && (
           <div>
             <h2>CRUD san pham + Upload anh</h2>
+            <p className="admin-note">Nhập đầy đủ từng trường để tạo sản phẩm mới. Các ô bên dưới đã ghi rõ bạn cần điền gì vào đó.</p>
             <form className="admin-form" onSubmit={createProduct}>
-              <input required placeholder="Ten san pham" value={productForm.name} onChange={(e) => setProductForm((p) => ({ ...p, name: e.target.value }))} />
-              <select
-                value={productForm.main_category}
-                onChange={(e) => {
-                  const nextMain = e.target.value;
-                  const nextSubs = getSubcategoriesByMain(mainCategories, nextMain);
-                  const nextSub = nextSubs[0]?.key || '';
-                  setProductForm((p) => ({ ...p, main_category: nextMain, sub_category: nextSub, category: nextSub }));
-                }}
-              >
-                {mainCategories.map((main) => <option value={main.key} key={main.key}>{main.label}</option>)}
-              </select>
-              <select
-                value={productForm.sub_category}
-                onChange={(e) => {
-                  const nextSub = e.target.value;
-                  setProductForm((p) => ({ ...p, sub_category: nextSub, category: nextSub }));
-                }}
-              >
-                {formSubCategories.map((sub) => <option value={sub.key} key={sub.key}>{sub.label}</option>)}
-              </select>
-              <input required type="number" placeholder="Gia" value={productForm.price} onChange={(e) => setProductForm((p) => ({ ...p, price: Number(e.target.value) }))} />
-              <input required type="number" placeholder="Ton kho" value={productForm.stock} onChange={(e) => setProductForm((p) => ({ ...p, stock: Number(e.target.value) }))} />
-              <input placeholder="Thuong hieu" value={productForm.brand} onChange={(e) => setProductForm((p) => ({ ...p, brand: e.target.value }))} />
-              <input type="number" placeholder="Bao hanh (thang)" value={productForm.warranty_months} onChange={(e) => setProductForm((p) => ({ ...p, warranty_months: Number(e.target.value) }))} />
-              <input placeholder="Image URL (tuy chon)" value={productForm.image_url} onChange={(e) => setProductForm((p) => ({ ...p, image_url: e.target.value }))} />
-              <input placeholder="Mo ta" value={productForm.description} onChange={(e) => setProductForm((p) => ({ ...p, description: e.target.value }))} />
-              <button className="btn neon" type="submit">Them san pham</button>
+              <div className="admin-field">
+                <label htmlFor="product-name">Ten san pham</label>
+                <input
+                  id="product-name"
+                  required
+                  placeholder="Vi du: iPhone 15 Pro Max"
+                  value={productForm.name}
+                  onChange={(e) => setProductForm((p) => ({ ...p, name: e.target.value }))}
+                />
+                <small>Ten hien thi tren website va trong danh sach san pham.</small>
+              </div>
+              <div className="admin-field">
+                <label htmlFor="product-main-category">Nganh hang chinh</label>
+                <select
+                  id="product-main-category"
+                  value={productForm.main_category}
+                  onChange={(e) => {
+                    const nextMain = e.target.value;
+                    const nextSubs = getSubcategoriesByMain(mainCategories, nextMain);
+                    const nextSub = nextSubs[0]?.key || '';
+                    setProductForm((p) => ({ ...p, main_category: nextMain, sub_category: nextSub, category: nextSub }));
+                  }}
+                >
+                  {mainCategories.map((main) => <option value={main.key} key={main.key}>{main.label}</option>)}
+                </select>
+                <small>Chon nhom lon cua san pham, nhu Electronics, Fashion, Home...</small>
+              </div>
+              <div className="admin-field">
+                <label htmlFor="product-sub-category">Danh muc con</label>
+                <select
+                  id="product-sub-category"
+                  value={productForm.sub_category}
+                  onChange={(e) => {
+                    const nextSub = e.target.value;
+                    setProductForm((p) => ({ ...p, sub_category: nextSub, category: nextSub }));
+                  }}
+                >
+                  {formSubCategories.map((sub) => <option value={sub.key} key={sub.key}>{sub.label}</option>)}
+                </select>
+                <small>Chon loai chi tiet hon, vi du Phone, Laptop, Audio.</small>
+              </div>
+              <div className="admin-field">
+                <label htmlFor="product-price">Gia ban</label>
+                <input
+                  id="product-price"
+                  required
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Gia theo USD"
+                  value={productForm.price}
+                  onChange={(e) => setProductForm((p) => ({ ...p, price: Number(e.target.value) }))}
+                />
+                <small>Gia san pham truoc khi quy doi sang VND tren giao dien.</small>
+              </div>
+              <div className="admin-field">
+                <label htmlFor="product-stock">So luong ton kho</label>
+                <input
+                  id="product-stock"
+                  required
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="So luong hien co"
+                  value={productForm.stock}
+                  onChange={(e) => setProductForm((p) => ({ ...p, stock: Number(e.target.value) }))}
+                />
+                <small>So luong con lai trong kho de hien thi tinh trang con hang.</small>
+              </div>
+              <div className="admin-field">
+                <label htmlFor="product-brand">Thuong hieu</label>
+                <input
+                  id="product-brand"
+                  placeholder="Vi du: Apple, Samsung"
+                  value={productForm.brand}
+                  onChange={(e) => setProductForm((p) => ({ ...p, brand: e.target.value }))}
+                />
+                <small>Ten nha san xuat hoac thuong hieu cua san pham.</small>
+              </div>
+              <div className="admin-field">
+                <label htmlFor="product-warranty">Bao hanh (thang)</label>
+                <input
+                  id="product-warranty"
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="So thang bao hanh"
+                  value={productForm.warranty_months}
+                  onChange={(e) => setProductForm((p) => ({ ...p, warranty_months: Number(e.target.value) }))}
+                />
+                <small>Nhap so thang bao hanh neu san pham co ap dung.</small>
+              </div>
+              <div className="admin-field">
+                <label htmlFor="product-image-url">Anh san pham</label>
+                <input
+                  id="product-image-url"
+                  placeholder="Dan URL anh, khong bat buoc"
+                  value={productForm.image_url}
+                  onChange={(e) => setProductForm((p) => ({ ...p, image_url: e.target.value }))}
+                />
+                <small>Co the bo trong neu ban se upload anh o phan danh sach ben duoi.</small>
+              </div>
+              <div className="admin-field admin-field-wide">
+                <label htmlFor="product-description">Mo ta san pham</label>
+                <input
+                  id="product-description"
+                  placeholder="Neu tiet ngán, co the ghi tinh nang noi bat"
+                  value={productForm.description}
+                  onChange={(e) => setProductForm((p) => ({ ...p, description: e.target.value }))}
+                />
+                <small>Mo ta ngan de nguoi dung hieu san pham dung de lam gi.</small>
+              </div>
+              <div className="admin-field admin-field-wide">
+                <label>&nbsp;</label>
+                <button className="btn neon" type="submit">Them san pham</button>
+              </div>
             </form>
 
+            <p className="admin-note admin-note-top">Bo loc ben duoi dung de tim san pham can sua/xoa. Moi bo loc co y nghia ro rang de ban loc nhanh hon.</p>
             <div className="admin-filters">
-              <input placeholder="Tim theo ten/brand/mo ta" value={filters.products.search} onChange={(e) => setFilter('products', 'search', e.target.value)} />
-              <select
-                value={filters.products.mainCategory}
-                onChange={(e) => {
-                  setFilter('products', 'mainCategory', e.target.value);
-                  setFilter('products', 'subCategory', '');
-                }}
-              >
-                <option value="">Tat ca nganh hang</option>
-                {mainCategories.map((main) => <option value={main.key} key={main.key}>{main.label}</option>)}
-              </select>
-              <select value={filters.products.subCategory} onChange={(e) => setFilter('products', 'subCategory', e.target.value)}>
-                <option value="">Tat ca danh muc con</option>
-                {filterSubCategories.map((sub) => <option value={sub.key} key={sub.key}>{sub.label}</option>)}
-              </select>
-              <input type="number" placeholder="Gia tu" value={filters.products.minPrice} onChange={(e) => setFilter('products', 'minPrice', e.target.value)} />
-              <input type="number" placeholder="Gia den" value={filters.products.maxPrice} onChange={(e) => setFilter('products', 'maxPrice', e.target.value)} />
-              <select value={filters.products.stock} onChange={(e) => setFilter('products', 'stock', e.target.value)}>
-                <option value="all">Tat ca ton kho</option>
-                <option value="instock">Con hang</option>
-                <option value="low">Sap het (&lt;=5)</option>
-              </select>
+              <div className="admin-field">
+                <label htmlFor="product-search">Tim san pham</label>
+                <input
+                  id="product-search"
+                  placeholder="Ten, thuong hieu hoac mo ta"
+                  value={filters.products.search}
+                  onChange={(e) => setFilter('products', 'search', e.target.value)}
+                />
+                <small>Tim theo noi dung co san trong ten, brand va mo ta.</small>
+              </div>
+              <div className="admin-field">
+                <label htmlFor="product-filter-main">Nganh hang</label>
+                <select
+                  id="product-filter-main"
+                  value={filters.products.mainCategory}
+                  onChange={(e) => {
+                    setFilter('products', 'mainCategory', e.target.value);
+                    setFilter('products', 'subCategory', '');
+                  }}
+                >
+                  <option value="">Tat ca nganh hang</option>
+                  {mainCategories.map((main) => <option value={main.key} key={main.key}>{main.label}</option>)}
+                </select>
+                <small>Loc theo nhom san pham lon.</small>
+              </div>
+              <div className="admin-field">
+                <label htmlFor="product-filter-sub">Danh muc con</label>
+                <select id="product-filter-sub" value={filters.products.subCategory} onChange={(e) => setFilter('products', 'subCategory', e.target.value)}>
+                  <option value="">Tat ca danh muc con</option>
+                  {filterSubCategories.map((sub) => <option value={sub.key} key={sub.key}>{sub.label}</option>)}
+                </select>
+                <small>Chi hien san pham nam trong danh muc chi tiet nay.</small>
+              </div>
+              <div className="admin-field">
+                <label htmlFor="product-min-price">Gia toi thieu</label>
+                <input
+                  id="product-min-price"
+                  type="number"
+                  placeholder="Gia tu"
+                  value={filters.products.minPrice}
+                  onChange={(e) => setFilter('products', 'minPrice', e.target.value)}
+                />
+                <small>Chon muc gia thap nhat muon hien thi.</small>
+              </div>
+              <div className="admin-field">
+                <label htmlFor="product-max-price">Gia toi da</label>
+                <input
+                  id="product-max-price"
+                  type="number"
+                  placeholder="Gia den"
+                  value={filters.products.maxPrice}
+                  onChange={(e) => setFilter('products', 'maxPrice', e.target.value)}
+                />
+                <small>Chon muc gia cao nhat muon hien thi.</small>
+              </div>
+              <div className="admin-field">
+                <label htmlFor="product-stock-filter">Tinh trang ton kho</label>
+                <select id="product-stock-filter" value={filters.products.stock} onChange={(e) => setFilter('products', 'stock', e.target.value)}>
+                  <option value="all">Tat ca ton kho</option>
+                  <option value="instock">Con hang</option>
+                  <option value="low">Sap het (&lt;=5)</option>
+                </select>
+                <small>Loc theo so luong con lai trong kho.</small>
+              </div>
             </div>
 
             {renderPagination('products', filteredProducts)}
@@ -487,7 +607,7 @@ export default function AdminPage() {
               {pagedReviews.map((r) => (
                 <div className="table-row" key={r.id}>
                   <div>
-                    <strong>{r.user_name} - {r.product_name}</strong>
+                    <strong>{r.user_name} - {r.product_name || `Da xoa #${r.product_id}`}</strong>
                     <p>{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)} - {r.comment}</p>
                     <small>Order #{r.order_id}</small>
                   </div>

@@ -17,6 +17,7 @@ export default function ProductPage() {
   const [reviews, setReviews] = useState([]);
   const [canReview, setCanReview] = useState(false);
   const [orderId, setOrderId] = useState(null);
+  const [hasReviewed, setHasReviewed] = useState(false);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
   const [submitting, setSubmitting] = useState(false);
 
@@ -40,11 +41,16 @@ export default function ProductPage() {
 
     if (user) {
       const { data } = await orderService.canReview(user.id, id);
-      setCanReview(Boolean(data.canReview));
-      setOrderId(data.order_id || null);
+      const oid = data.order_id || null;
+      setOrderId(oid);
+      // If we have an order_id, consider reviewed only if there's a review for that order
+      const alreadyReviewed = oid ? (reviewRes.data || []).some((review) => Number(review.order_id) === Number(oid)) : (reviewRes.data || []).some((review) => Number(review.user_id) === Number(user.id));
+      setHasReviewed(alreadyReviewed);
+      setCanReview(Boolean(data.canReview) && !alreadyReviewed);
     } else {
       setCanReview(false);
       setOrderId(null);
+      setHasReviewed(false);
     }
   };
 
@@ -57,7 +63,7 @@ export default function ProductPage() {
 
   const submitReview = async (e) => {
     e.preventDefault();
-    if (!user || !canReview || !orderId) return;
+    if (!user || !canReview || !orderId || hasReviewed) return;
     setSubmitting(true);
     try {
       await productService.addReview(id, {
@@ -69,6 +75,8 @@ export default function ProductPage() {
       });
       setReviewForm({ rating: 5, comment: '' });
       await loadData();
+    } catch (error) {
+      alert(error?.response?.data?.message || 'Khong the gui danh gia');
     } finally {
       setSubmitting(false);
     }
@@ -115,7 +123,8 @@ export default function ProductPage() {
         ))}
 
         {!user && <p>Dang nhap va mua hang de co the danh gia.</p>}
-        {user && !canReview && <p>Ban chi duoc danh gia sau khi da mua va don o trang thai hoan thanh.</p>}
+        {user && !canReview && !hasReviewed && <p>Ban chi duoc danh gia sau khi da mua va don o trang thai hoan thanh.</p>}
+        {user && hasReviewed && <p>Ban da danh gia san pham nay roi.</p>}
 
         {user && canReview && (
           <form className="review-form" onSubmit={submitReview}>

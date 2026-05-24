@@ -16,6 +16,59 @@ app.use(express.json());
 
 const db = new sqlite3.Database('./db/users.db');
 
+function normalizeCartItem(raw, options = {}) {
+  const productId = Number(raw?.product_id ?? raw?.id);
+  if (!Number.isFinite(productId)) return null;
+
+  const rawQuantity = Number(raw?.quantity ?? 1);
+  const quantity = options.allowZeroQuantity ? Math.max(0, rawQuantity) : Math.max(1, rawQuantity || 1);
+  return {
+    product_id: productId,
+    quantity,
+    product_name: String(raw?.product_name || raw?.name || `Product ${productId}`),
+    product_price: Number(raw?.product_price ?? raw?.price ?? 0) || 0,
+    product_image: String(raw?.product_image || raw?.image_url || ''),
+    product_category: String(raw?.product_category || raw?.category || ''),
+    product_subcategory: String(raw?.product_subcategory || raw?.sub_category || '')
+  };
+}
+
+function mergeCartItems(items) {
+  const map = new Map();
+
+  for (const raw of items || []) {
+    const item = normalizeCartItem(raw);
+    if (!item) continue;
+    const current = map.get(item.product_id);
+    if (!current) {
+      map.set(item.product_id, item);
+      continue;
+    }
+
+    map.set(item.product_id, {
+      ...current,
+      quantity: current.quantity + item.quantity,
+      product_name: item.product_name || current.product_name,
+      product_price: item.product_price || current.product_price,
+      product_image: item.product_image || current.product_image,
+      product_category: item.product_category || current.product_category,
+      product_subcategory: item.product_subcategory || current.product_subcategory
+    });
+  }
+
+  return Array.from(map.values());
+}
+
+async function getCartItems(userId) {
+  return all(
+    `SELECT *
+     FROM cart_items
+     WHERE user_id = ?
+     ORDER BY updated_at DESC, id DESC`,
+    [userId]
+  );
+}
+
 function run(sql, params = []) {
   return new Promise((resolve, reject) => {
     db.run(sql, params, function callback(err) {
@@ -118,6 +171,30 @@ async function initDb() {
   await ensureColumn('addresses', 'district', 'TEXT');
   await ensureColumn('addresses', 'note', 'TEXT');
   await ensureColumn('addresses', 'is_default', 'INTEGER DEFAULT 0');
+
+  await run(`CREATE TABLE IF NOT EXISTS cart_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    product_name TEXT DEFAULT 'Unknown Product',
+    product_price REAL DEFAULT 0,
+    product_image TEXT DEFAULT '',
+    product_category TEXT DEFAULT '',
+    product_subcategory TEXT DEFAULT '',
+    quantity INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(user_id, product_id)
+  )`);
+
+  await ensureColumn('cart_items', 'product_name', "TEXT DEFAULT 'Unknown Product'");
+  await ensureColumn('cart_items', 'product_price', 'REAL DEFAULT 0');
+  await ensureColumn('cart_items', 'product_image', "TEXT DEFAULT ''");
+  await ensureColumn('cart_items', 'product_category', "TEXT DEFAULT ''");
+  await ensureColumn('cart_items', 'product_subcategory', "TEXT DEFAULT ''");
+  await ensureColumn('cart_items', 'quantity', 'INTEGER DEFAULT 1');
+  await ensureColumn('cart_items', 'created_at', "TEXT DEFAULT (datetime('now'))");
+  await ensureColumn('cart_items', 'updated_at', "TEXT DEFAULT (datetime('now'))");
 
   await seedAdmin();
 }
@@ -422,9 +499,189 @@ app.delete('/admin/users/:id', ensureAdmin, async (req, res) => {
     const result = await run('DELETE FROM users WHERE id = ? AND role != ?', [req.params.id, 'admin']);
     if (!result.changes) return res.status(400).json({ message: 'Cannot delete user' });
     await run('DELETE FROM addresses WHERE user_id = ?', [req.params.id]);
+    await run('DELETE FROM cart_items WHERE user_id = ?', [req.params.id]);
     return res.json({ ok: true });
   } catch (e) {
     return res.status(500).json({ message: 'Cannot delete user', error: e.message });
+  }
+});
+
+app.get('/cart/:userId', async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    if (!Number.isFinite(userId)) {
+      return res.status(400).json({ message: 'Invalid user_id' });
+    }
+
+    const rows = await getCartItems(userId);
+    return res.json(rows);
+  } catch (e) {
+    return res.status(500).json({ message: 'Cannot load cart', error: e.message });
+  }
+});
+
+app.put('/cart/:userId', async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    const items = mergeCartItems(req.body.items || []);
+
+    if (!Number.isFinite(userId)) {
+      return res.status(400).json({ message: 'Invalid user_id' });
+    }
+
+    await run('DELETE FROM cart_items WHERE user_id = ?', [userId]);
+
+    for (const item of items) {
+      await run(
+        `INSERT INTO cart_items (
+          user_id, product_id, product_name, product_price, product_image, product_category, product_subcategory, quantity, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+        [
+          userId,
+          item.product_id,
+          item.product_name,
+          item.product_price,
+          item.product_image,
+          item.product_category,
+          item.product_subcategory,
+          item.quantity
+        ]
+      );
+    }
+
+    const rows = await getCartItems(userId);
+    return res.json(rows);
+  } catch (e) {
+    return res.status(500).json({ message: 'Cannot sync cart', error: e.message });
+  }
+});
+
+app.post('/cart/:userId/items', async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    const item = normalizeCartItem(req.body);
+    if (!Number.isFinite(userId)) {
+      return res.status(400).json({ message: 'Invalid user_id' });
+    }
+    if (!item) {
+      return res.status(400).json({ message: 'Missing product_id' });
+    }
+
+    const current = await get('SELECT * FROM cart_items WHERE user_id = ? AND product_id = ?', [userId, item.product_id]);
+    const nextQuantity = Number(current?.quantity || 0) + item.quantity;
+
+    await run(
+      `INSERT INTO cart_items (
+        user_id, product_id, product_name, product_price, product_image, product_category, product_subcategory, quantity, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, COALESCE((SELECT created_at FROM cart_items WHERE user_id = ? AND product_id = ?), datetime('now')), datetime('now'))
+      ON CONFLICT(user_id, product_id) DO UPDATE SET
+        product_name = excluded.product_name,
+        product_price = excluded.product_price,
+        product_image = excluded.product_image,
+        product_category = excluded.product_category,
+        product_subcategory = excluded.product_subcategory,
+        quantity = excluded.quantity,
+        updated_at = datetime('now')`,
+      [
+        userId,
+        item.product_id,
+        item.product_name,
+        item.product_price,
+        item.product_image,
+        item.product_category,
+        item.product_subcategory,
+        nextQuantity,
+        userId,
+        item.product_id
+      ]
+    );
+
+    const row = await get('SELECT * FROM cart_items WHERE user_id = ? AND product_id = ?', [userId, item.product_id]);
+    return res.status(current ? 200 : 201).json(row);
+  } catch (e) {
+    return res.status(500).json({ message: 'Cannot add cart item', error: e.message });
+  }
+});
+
+app.put('/cart/:userId/items/:productId', async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    const productId = Number(req.params.productId);
+    const item = normalizeCartItem({ ...req.body, product_id: productId }, { allowZeroQuantity: true });
+
+    if (!Number.isFinite(userId) || !Number.isFinite(productId)) {
+      return res.status(400).json({ message: 'Invalid identifiers' });
+    }
+
+    if (!item) {
+      return res.status(400).json({ message: 'Missing product_id' });
+    }
+
+    if (item.quantity <= 0) {
+      await run('DELETE FROM cart_items WHERE user_id = ? AND product_id = ?', [userId, productId]);
+      return res.json({ ok: true, deleted: true });
+    }
+
+    await run(
+      `INSERT INTO cart_items (
+        user_id, product_id, product_name, product_price, product_image, product_category, product_subcategory, quantity, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, COALESCE((SELECT created_at FROM cart_items WHERE user_id = ? AND product_id = ?), datetime('now')), datetime('now'))
+      ON CONFLICT(user_id, product_id) DO UPDATE SET
+        product_name = excluded.product_name,
+        product_price = excluded.product_price,
+        product_image = excluded.product_image,
+        product_category = excluded.product_category,
+        product_subcategory = excluded.product_subcategory,
+        quantity = excluded.quantity,
+        updated_at = datetime('now')`,
+      [
+        userId,
+        productId,
+        item.product_name,
+        item.product_price,
+        item.product_image,
+        item.product_category,
+        item.product_subcategory,
+        item.quantity,
+        userId,
+        productId
+      ]
+    );
+
+    const row = await get('SELECT * FROM cart_items WHERE user_id = ? AND product_id = ?', [userId, productId]);
+    return res.json(row);
+  } catch (e) {
+    return res.status(500).json({ message: 'Cannot update cart item', error: e.message });
+  }
+});
+
+app.delete('/cart/:userId/items/:productId', async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    const productId = Number(req.params.productId);
+    if (!Number.isFinite(userId) || !Number.isFinite(productId)) {
+      return res.status(400).json({ message: 'Invalid identifiers' });
+    }
+
+    const result = await run('DELETE FROM cart_items WHERE user_id = ? AND product_id = ?', [userId, productId]);
+    if (!result.changes) return res.status(404).json({ message: 'Cart item not found' });
+    return res.json({ ok: true });
+  } catch (e) {
+    return res.status(500).json({ message: 'Cannot delete cart item', error: e.message });
+  }
+});
+
+app.delete('/cart/:userId', async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    if (!Number.isFinite(userId)) {
+      return res.status(400).json({ message: 'Invalid user_id' });
+    }
+
+    await run('DELETE FROM cart_items WHERE user_id = ?', [userId]);
+    return res.json({ ok: true });
+  } catch (e) {
+    return res.status(500).json({ message: 'Cannot clear cart', error: e.message });
   }
 });
 

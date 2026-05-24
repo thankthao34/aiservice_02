@@ -93,9 +93,9 @@ export default function CheckoutPage() {
 
   return (
     <section className="checkout-layout">
-      <article className="card">
-        <h1>Dia chi nhan hang</h1>
-        {!addresses.length && <p>Ban chua co dia chi. Vui long them moi truoc khi thanh toan.</p>}
+      <article className="card checkout-main-panel">
+        <h1>Địa chỉ nhận hàng</h1>
+        {!addresses.length && <p>Bạn chưa có địa chỉ. Vui lòng thêm mới trước khi thanh toán.</p>}
 
         {!!addresses.length && (
           <div className="address-list">
@@ -109,13 +109,13 @@ export default function CheckoutPage() {
                 <div>
                   <div className="row">
                     <strong>{addr.receiver_name}</strong>
-                    {Number(addr.is_default) === 1 && <span className="chip">Mac dinh</span>}
+                    {Number(addr.is_default) === 1 && <span className="chip">Mặc định</span>}
                   </div>
                   <p>{addr.phone}</p>
                   <p>{addr.line1}, {addr.ward}, {addr.district}, {addr.city}</p>
-                  {addr.note && <small>Ghi chu: {addr.note}</small>}
+                  {addr.note && <small>Ghi chú: {addr.note}</small>}
                   {Number(addr.is_default) !== 1 && (
-                    <button className="btn ghost" type="button" onClick={() => setDefault(addr.id)}>Dat mac dinh</button>
+                    <button className="btn ghost" type="button" onClick={() => setDefault(addr.id)}>Đặt mặc định</button>
                   )}
                 </div>
               </label>
@@ -123,51 +123,58 @@ export default function CheckoutPage() {
           </div>
         )}
 
-        <button className="btn ghost" onClick={() => setShowAddressForm((v) => !v)}>
-          {showAddressForm ? 'Dong form' : 'Them dia chi moi'}
+        <button className="btn ghost checkout-address-toggle" onClick={() => setShowAddressForm((v) => !v)}>
+          {showAddressForm ? 'Đóng form' : 'Thêm địa chỉ mới'}
         </button>
 
         {showAddressForm && (
-          <form className="address-form" onSubmit={onAddAddress}>
-            <input required placeholder="Nguoi nhan" value={addressForm.receiver_name} onChange={(e) => setAddressForm((p) => ({ ...p, receiver_name: e.target.value }))} />
-            <input required placeholder="So dien thoai" value={addressForm.phone} onChange={(e) => setAddressForm((p) => ({ ...p, phone: e.target.value }))} />
-            <input required placeholder="Dia chi cu the" value={addressForm.line1} onChange={(e) => setAddressForm((p) => ({ ...p, line1: e.target.value }))} />
-            <input placeholder="Phuong/Xa" value={addressForm.ward} onChange={(e) => setAddressForm((p) => ({ ...p, ward: e.target.value }))} />
-            <input placeholder="Quan/Huyen" value={addressForm.district} onChange={(e) => setAddressForm((p) => ({ ...p, district: e.target.value }))} />
-            <input required placeholder="Tinh/Thanh pho" value={addressForm.city} onChange={(e) => setAddressForm((p) => ({ ...p, city: e.target.value }))} />
-            <input placeholder="Ghi chu" value={addressForm.note} onChange={(e) => setAddressForm((p) => ({ ...p, note: e.target.value }))} />
-            <button className="btn neon" type="submit">Luu dia chi</button>
+          <form className="address-form checkout-address-form" onSubmit={onAddAddress}>
+            <input required placeholder="Người nhận" value={addressForm.receiver_name} onChange={(e) => setAddressForm((p) => ({ ...p, receiver_name: e.target.value }))} />
+            <input required placeholder="Số điện thoại" value={addressForm.phone} onChange={(e) => setAddressForm((p) => ({ ...p, phone: e.target.value }))} />
+            <input required placeholder="Địa chỉ cụ thể" value={addressForm.line1} onChange={(e) => setAddressForm((p) => ({ ...p, line1: e.target.value }))} />
+            <input placeholder="Phường/Xã" value={addressForm.ward} onChange={(e) => setAddressForm((p) => ({ ...p, ward: e.target.value }))} />
+            <input placeholder="Quận/Huyện" value={addressForm.district} onChange={(e) => setAddressForm((p) => ({ ...p, district: e.target.value }))} />
+            <input required placeholder="Tỉnh/Thành phố" value={addressForm.city} onChange={(e) => setAddressForm((p) => ({ ...p, city: e.target.value }))} />
+            <input placeholder="Ghi chú" value={addressForm.note} onChange={(e) => setAddressForm((p) => ({ ...p, note: e.target.value }))} />
+            <button className="btn neon" type="submit">Lưu địa chỉ</button>
           </form>
         )}
       </article>
 
-      <article className="card">
-        <h1>Thong tin don hang</h1>
-        <p>Kieu hien thi mo phong Shopee: chi tiet san pham, phi van chuyen va tong thanh toan.</p>
+      <article className="card checkout-summary-panel">
+        <h1>Thông tin đơn hàng</h1>
+        <p className="checkout-summary-note">Kiểm tra lại sản phẩm, số lượng và tổng tiền trước khi đặt hàng.</p>
 
-        {!items.length && <p>Gio hang dang trong.</p>}
-        {items.map((it) => (
-          <div className="cart-item" key={it.id}>
-            <div>
-              <strong>{it.name}</strong>
-              <p>{it.category} - So luong: {it.quantity}</p>
+        {!items.length && <p>Giỏ hàng đang trống.</p>}
+        <div className="checkout-items">
+          {items.map((it) => (
+            <div className="checkout-order-item" key={it.id}>
+              <img
+                className="checkout-order-thumb"
+                src={it.image_url || 'https://images.unsplash.com/photo-1556742044-3c52d6e88c62?auto=format&fit=crop&w=240&q=80'}
+                alt={it.name}
+              />
+              <div className="checkout-order-meta">
+                <strong>{it.name}</strong>
+                <span>{it.category} · Số lượng: {it.quantity}</span>
+              </div>
+              <div className="checkout-order-price">{formatPriceVndFromUsd(it.price * it.quantity)}</div>
             </div>
-            <span>{formatPriceVndFromUsd(it.price * it.quantity)}</span>
-          </div>
-        ))}
+          ))}
+        </div>
 
         <div className="checkout-summary">
-          <div className="row"><span>Tam tinh</span><strong>{formatPriceVndFromUsd(total)}</strong></div>
-          <div className="row"><span>Phi van chuyen</span><strong>{formatPriceVndFromUsd(shippingFee)}</strong></div>
-          <div className="row total-row"><span>Tong thanh toan</span><strong>{formatPriceVndFromUsd(grandTotal)}</strong></div>
+          <div className="row"><span>Tạm tính</span><strong>{formatPriceVndFromUsd(total)}</strong></div>
+          <div className="row"><span>Phí vận chuyển</span><strong>{formatPriceVndFromUsd(shippingFee)}</strong></div>
+          <div className="row total-row"><span>Tổng thanh toán</span><strong>{formatPriceVndFromUsd(grandTotal)}</strong></div>
         </div>
 
         <button
-          className="btn neon"
+          className="btn neon checkout-pay-btn"
           onClick={onPay}
           disabled={loading || !items.length || !selectedAddress}
         >
-          {loading ? 'Dang xu ly...' : 'Dat hang va thanh toan'}
+          {loading ? 'Đang xử lý...' : 'Đặt hàng và thanh toán'}
         </button>
       </article>
     </section>

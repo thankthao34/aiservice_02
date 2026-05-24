@@ -7,6 +7,7 @@ import google.generativeai as genai
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 gemini = genai.GenerativeModel(os.getenv("GEMINI_MODEL", "gemini-2.0-flash"))
+MAX_DOC_CHARS = 320
 
 SEG_DESC = {
     "cheap_hunter": "khách hàng ưa thích sản phẩm giá rẻ, tiết kiệm",
@@ -30,6 +31,16 @@ def _extract_text(resp) -> str:
             if ptext and ptext.strip():
                 return ptext.strip()
     return ""
+
+
+def _compact_doc(doc: Dict) -> str:
+    title = str(doc.get("title") or "").strip()
+    content = re.sub(r"\s+", " ", str(doc.get("content") or "").strip())
+    if len(content) > MAX_DOC_CHARS:
+        content = content[:MAX_DOC_CHARS].rsplit(" ", 1)[0].strip()
+        if content:
+            content += "..."
+    return f"[{title}]\n{content}" if content else f"[{title}]"
 
 
 def _fallback_answer(query: str, context_docs: List[Dict], segment: str) -> str:
@@ -87,7 +98,8 @@ def _fallback_answer(query: str, context_docs: List[Dict], segment: str) -> str:
 
 
 def generate(query: str, context_docs: list, segment: str) -> str:
-    context = "\n\n".join([f"[{d['title']}]\n{d['content']}" for d in context_docs])
+    compact_docs = [_compact_doc(d) for d in (context_docs or [])[:2]]
+    context = "\n\n".join(compact_docs)
     prompt = f"""Bạn là trợ lý tư vấn mua sắm điện tử của NEXUS Store.
 
 KHÁCH HÀNG: {segment} - {SEG_DESC.get(segment, '')}
@@ -102,7 +114,14 @@ Chỉ dùng nghìn đồng hoặc triệu đồng khi nhắc giá, không dùng 
 Ưu tiên ngữ cảnh cập nhật theo năm 2026, không nhắc năm 2024 nếu không được yêu cầu.
 Nêu rõ 1-3 gợi ý sản phẩm phù hợp với phân loại khách hàng."""
     try:
-        resp = gemini.generate_content(prompt)
+        resp = gemini.generate_content(
+            prompt,
+            generation_config={
+                "temperature": 0.35,
+                "top_p": 0.9,
+                "max_output_tokens": 220,
+            },
+        )
         text = _extract_text(resp)
         if text:
             return text

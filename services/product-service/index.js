@@ -180,6 +180,11 @@ for (const main of PRODUCT_TAXONOMY) {
   }
 }
 
+const SUBCATEGORY_MAIN_MAP = Array.from(SUBCATEGORY_INDEX.entries()).reduce((accumulator, [subKey, meta]) => {
+  accumulator[subKey] = meta.mainKey;
+  return accumulator;
+}, {});
+
 const CATEGORIES = Array.from(SUBCATEGORY_INDEX.keys());
 
 function normalizeKey(value) {
@@ -821,7 +826,7 @@ async function initDb() {
     comment TEXT NOT NULL,
     order_id INTEGER,
     created_at TEXT DEFAULT (datetime('now')),
-    UNIQUE(product_id, user_id, order_id)
+    UNIQUE(order_id)
   )`);
 
   await ensureColumn('reviews', 'order_id', 'INTEGER');
@@ -943,11 +948,13 @@ app.get('/', async (req, res) => {
       if (searchIntent?.mainCategory) {
         where.push('(main_category = ? OR sub_category = ? OR name LIKE ? OR description LIKE ? OR brand LIKE ?)');
         values.push(searchIntent.mainCategory, searchIntent.subCategory || searchIntent.mainCategory, searchLike, searchLike, searchLike);
-        orderSql = 'ORDER BY CASE WHEN sub_category = ? THEN 0 WHEN main_category = ? THEN 1 WHEN name LIKE ? OR description LIKE ? OR brand LIKE ? THEN 2 ELSE 3 END, p.id DESC';
-        orderValues = [searchIntent.subCategory || searchIntent.mainCategory, searchIntent.mainCategory, searchLike, searchLike, searchLike];
+        orderSql = 'ORDER BY CASE WHEN name LIKE ? THEN 0 WHEN brand LIKE ? THEN 1 WHEN sub_category = ? THEN 2 WHEN main_category = ? THEN 3 WHEN description LIKE ? THEN 4 ELSE 5 END, p.id DESC';
+        orderValues = [searchLike, searchLike, searchIntent.subCategory || searchIntent.mainCategory, searchIntent.mainCategory, searchLike];
       } else {
         where.push('(name LIKE ? OR description LIKE ? OR brand LIKE ?)');
         values.push(searchLike, searchLike, searchLike);
+        orderSql = 'ORDER BY CASE WHEN name LIKE ? THEN 0 WHEN brand LIKE ? THEN 1 WHEN description LIKE ? THEN 2 ELSE 3 END, p.id DESC';
+        orderValues = [searchLike, searchLike, searchLike];
       }
     }
 
@@ -1102,6 +1109,21 @@ app.post('/admin/products/:id/upload-image', ensureAdmin, (req, res) => {
   });
 });
 
+app.get('/admin/reviews', ensureAdmin, async (_, res) => {
+  try {
+    const rows = await all(
+      `SELECT r.id, r.product_id, r.user_id, r.user_name, r.rating, r.comment, r.order_id, r.created_at,
+              p.name AS product_name, p.image_url AS product_image_url
+       FROM reviews r
+       LEFT JOIN products p ON p.id = r.product_id
+       ORDER BY r.created_at DESC`
+    );
+    return res.json(rows);
+  } catch (e) {
+    return res.status(500).json({ message: 'Cannot load admin reviews', error: e.message });
+  }
+});
+
 app.get('/reviews/user/:uid', async (req, res) => {
   try {
     const userId = Number(req.params.uid);
@@ -1133,8 +1155,15 @@ app.post('/:id/reviews', async (req, res) => {
     const numericRating = Number(rating);
     if (numericRating < 1 || numericRating > 5) return res.status(400).json({ message: 'Rating must be 1..5' });
 
-    const dup = await get('SELECT id FROM reviews WHERE product_id = ? AND user_id = ? AND order_id = ? LIMIT 1', [productId, Number(user_id), Number(order_id)]);
-    if (dup) return res.status(400).json({ message: 'Order item already reviewed' });
+    // Enforce one review per order: if an order_id is provided, ensure that order hasn't been reviewed yet.
+    if (order_id) {
+      const dup = await get('SELECT id FROM reviews WHERE order_id = ? LIMIT 1', [Number(order_id)]);
+      if (dup) return res.status(400).json({ message: 'This order has already been reviewed' });
+    } else {
+      // Fallback: if no order_id supplied, fall back to preventing multiple reviews per (product, user)
+      const dup = await get('SELECT id FROM reviews WHERE product_id = ? AND user_id = ? LIMIT 1', [productId, Number(user_id)]);
+      if (dup) return res.status(400).json({ message: 'Product already reviewed by this user' });
+    }
 
     await run('INSERT INTO reviews (product_id, user_id, user_name, rating, comment, order_id) VALUES (?, ?, ?, ?, ?, ?)',
       [productId, Number(user_id), String(user_name), numericRating, String(comment), Number(order_id)]);
