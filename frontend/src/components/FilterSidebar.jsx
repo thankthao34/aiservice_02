@@ -1,9 +1,26 @@
+import { useMemo } from 'react';
+import { getSubcategoriesByMain } from '../utils/categoryTree';
+
 export default function FilterSidebar({
   filters,
   setFilters,
   mainCategories = [],
   subCategories = []
 }) {
+  const allowedSubCategories = useMemo(() => {
+    if (!filters.mainCategory) {
+      return [];
+    }
+
+    const scopedSubCategories = getSubcategoriesByMain(mainCategories, filters.mainCategory);
+    if (!subCategories.length) {
+      return scopedSubCategories;
+    }
+
+    const allowedKeys = new Set(scopedSubCategories.map((item) => item.key));
+    return subCategories.filter((item) => allowedKeys.has(item.key));
+  }, [filters.mainCategory, mainCategories, subCategories]);
+
   const handleMainCategoryChange = (value) => {
     setFilters((prev) => ({
       ...prev,
@@ -38,7 +55,7 @@ export default function FilterSidebar({
           }))}
         >
           <option value="">{filters.mainCategory ? 'All' : 'Select main category first'}</option>
-          {subCategories.map((c) => (
+          {allowedSubCategories.map((c) => (
             <option key={c.key} value={c.key}>{c.label}</option>
           ))}
         </select>
