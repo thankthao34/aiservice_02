@@ -1,0 +1,24 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Product Service API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "List products",
+        "parameters": [
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "category", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/by-ids": {
+      "get": { "summary": "Get products by ids", "parameters": [{ "name": "ids", "in": "query", "schema": { "type": "string" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/featured": { "get": { "summary": "Get featured products", "responses": { "200": { "description": "OK" } } } },
+    "/inventory/decrease": { "post": { "summary": "Decrease inventory", "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } }, "responses": { "200": { "description": "OK" } } } }
+  }
+}

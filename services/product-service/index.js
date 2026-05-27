@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const sqlite3 = require('sqlite3').verbose();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -15,7 +14,6 @@ const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || `http://localhost:${port}
 app.use(cors());
 app.use(express.json());
 
-const db = new sqlite3.Database('./db/products.db');
 const uploadDir = path.join(__dirname, 'uploads', 'products');
 
 if (!fs.existsSync(uploadDir)) {
@@ -44,6 +42,18 @@ const upload = multer({
     cb(null, true);
   }
 });
+
+const productController = require('./api/controllers/productController');
+const productValidators = require('./api/validators/productValidators');
+const swaggerUi = require('swagger-ui-express');
+const swaggerDoc = require('./api/openapi.json');
+const ProductService = require('./application/productService');
+const SqliteProductRepository = require('./infrastructure/sqliteProductRepository');
+
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc));
+const productRepository = new SqliteProductRepository('./db/products.db');
+const productService = new ProductService(productRepository);
+productController.setService(productService);
 
 const PRODUCT_TAXONOMY = [
   {
@@ -781,126 +791,13 @@ const seedCatalog = [
 function isAdmin(req) { return String(req.headers['x-user-role'] || '').toLowerCase() === 'admin'; }
 function ensureAdmin(req, res, next) { return isAdmin(req) ? next() : res.status(403).json({ message: 'Admin role required' }); }
 
-function run(sql, params = []) { return new Promise((resolve, reject) => db.run(sql, params, function cb(err) { if (err) return reject(err); return resolve(this); })); }
-function get(sql, params = []) { return new Promise((resolve, reject) => db.get(sql, params, (err, row) => (err ? reject(err) : resolve(row)))); }
-function all(sql, params = []) { return new Promise((resolve, reject) => db.all(sql, params, (err, rows) => (err ? reject(err) : resolve(rows)))); }
+const run = (...args) => productRepository.runRaw(...args);
+const get = (...args) => productRepository.getRaw(...args);
+const all = (...args) => productRepository.allRaw(...args);
 
-async function ensureColumn(table, column, definition) {
-  const cols = await all(`PRAGMA table_info(${table})`);
-  const exists = cols.some((c) => c.name === column);
-  if (!exists) {
-    await run(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
-  }
-}
+async function ensureColumn() { return true; }
 
-async function initDb() {
-  await run(`CREATE TABLE IF NOT EXISTS products (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    description TEXT,
-    category TEXT NOT NULL,
-    main_category TEXT DEFAULT 'electronics',
-    sub_category TEXT,
-    price REAL NOT NULL,
-    image_url TEXT,
-    stock INTEGER DEFAULT 100,
-    rating REAL DEFAULT 4.0,
-    is_featured INTEGER DEFAULT 0,
-    brand TEXT DEFAULT 'Generic',
-    warranty_months INTEGER DEFAULT 12,
-    created_at TEXT DEFAULT (datetime('now'))
-  )`);
-
-  await ensureColumn('products', 'brand', "TEXT DEFAULT 'Generic'");
-  await ensureColumn('products', 'warranty_months', 'INTEGER DEFAULT 12');
-  await ensureColumn('products', 'created_at', 'TEXT');
-  await ensureColumn('products', 'main_category', "TEXT DEFAULT 'electronics'");
-  await ensureColumn('products', 'sub_category', 'TEXT');
-
-  await run(`CREATE TABLE IF NOT EXISTS reviews (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    product_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    user_name TEXT NOT NULL,
-    rating INTEGER NOT NULL,
-    comment TEXT NOT NULL,
-    order_id INTEGER,
-    created_at TEXT DEFAULT (datetime('now')),
-    UNIQUE(order_id)
-  )`);
-
-  await ensureColumn('reviews', 'order_id', 'INTEGER');
-  await ensureColumn('reviews', 'created_at', 'TEXT');
-
-  const existingProducts = await all('SELECT id, category, main_category, sub_category FROM products');
-  for (const row of existingProducts) {
-    const resolved = resolveCategoryInput(row.main_category, row.sub_category, row.category);
-    if (resolved.error) {
-      await run('UPDATE products SET main_category = ?, sub_category = ?, category = ? WHERE id = ?', ['electronics', 'accessory', 'accessory', row.id]);
-      continue;
-    }
-
-    const shouldUpdate =
-      normalizeKey(row.main_category) !== resolved.mainCategory
-      || normalizeKey(row.sub_category) !== resolved.subCategory
-      || normalizeKey(row.category) !== resolved.subCategory;
-
-    if (shouldUpdate) {
-      await run(
-        'UPDATE products SET main_category = ?, sub_category = ?, category = ? WHERE id = ?',
-        [resolved.mainCategory, resolved.subCategory, resolved.subCategory, row.id]
-      );
-    }
-  }
-
-  // Remove previous synthetic niche seed records so new realistic naming does not duplicate them.
-  await run('DELETE FROM products WHERE main_category <> ? AND description LIKE ?', ['electronics', '%cho nganh%']);
-
-  for (const item of seedCatalog) {
-    const resolved = resolveCategoryInput(item.main_category, item.sub_category, item.category);
-    const mainCategory = resolved.error ? 'electronics' : resolved.mainCategory;
-    const subCategory = resolved.error ? 'accessory' : resolved.subCategory;
-
-    const existing = await get('SELECT id FROM products WHERE name = ? LIMIT 1', [item.name]);
-    if (existing?.id) {
-      await run(
-        'UPDATE products SET description = ?, category = ?, main_category = ?, sub_category = ?, price = ?, image_url = ?, stock = ?, rating = ?, is_featured = ?, brand = ?, warranty_months = ? WHERE name = ?',
-        [
-          item.description,
-          subCategory,
-          mainCategory,
-          subCategory,
-          item.price,
-          getCategoryImage(mainCategory, subCategory),
-          item.stock,
-          item.rating,
-          item.is_featured,
-          item.brand,
-          item.warranty_months,
-          item.name
-        ]
-      );
-    } else {
-      await run(
-        'INSERT INTO products (name, description, category, main_category, sub_category, price, image_url, stock, rating, is_featured, brand, warranty_months) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [
-          item.name,
-          item.description,
-          subCategory,
-          mainCategory,
-          subCategory,
-          item.price,
-          getCategoryImage(mainCategory, subCategory),
-          item.stock,
-          item.rating,
-          item.is_featured,
-          item.brand,
-          item.warranty_months
-        ]
-      );
-    }
-  }
-}
+async function initDb() { return productRepository.initDb(); }
 
 app.get('/health', (_, res) => res.json({ ok: true, service: 'product-service' }));
 app.get('/categories', (_, res) => {
@@ -915,168 +812,23 @@ app.get('/categories', (_, res) => {
   });
 });
 
-app.get('/', async (req, res) => {
-  try {
-    const { category, mainCategory, subCategory, minPrice, maxPrice, search } = req.query;
-    const where = [];
-    const values = [];
-    const normalizedMain = normalizeKey(mainCategory);
-    const normalizedSub = normalizeKey(subCategory);
-    const normalizedLegacyCategory = normalizeKey(category);
+app.get('/', productController.list);
+// handled by controller
+);
 
-    if (normalizedMain) {
-      where.push('main_category = ?');
-      values.push(normalizedMain);
-    }
+app.get('/featured', productController.getFeatured);
 
-    if (normalizedSub) {
-      where.push('(sub_category = ? OR category = ?)');
-      values.push(normalizedSub, normalizedSub);
-    } else if (normalizedLegacyCategory) {
-      where.push('(sub_category = ? OR category = ?)');
-      values.push(normalizedLegacyCategory, normalizedLegacyCategory);
-    }
+app.get('/by-ids', productController.getByIds);
 
-    if (minPrice) { where.push('price >= ?'); values.push(Number(minPrice)); }
-    if (maxPrice) { where.push('price <= ?'); values.push(Number(maxPrice)); }
-    const searchIntent = resolveSearchIntent(search);
-    const searchLike = `%${search || ''}%`;
-    let orderSql = 'ORDER BY p.id DESC';
-    let orderValues = [];
+app.post('/inventory/decrease', productValidators.decreaseInventory, productController.decreaseInventory);
 
-    if (search) {
-      if (searchIntent?.mainCategory) {
-        where.push('(main_category = ? OR sub_category = ? OR name LIKE ? OR description LIKE ? OR brand LIKE ?)');
-        values.push(searchIntent.mainCategory, searchIntent.subCategory || searchIntent.mainCategory, searchLike, searchLike, searchLike);
-        orderSql = 'ORDER BY CASE WHEN name LIKE ? THEN 0 WHEN brand LIKE ? THEN 1 WHEN sub_category = ? THEN 2 WHEN main_category = ? THEN 3 WHEN description LIKE ? THEN 4 ELSE 5 END, p.id DESC';
-        orderValues = [searchLike, searchLike, searchIntent.subCategory || searchIntent.mainCategory, searchIntent.mainCategory, searchLike];
-      } else {
-        where.push('(name LIKE ? OR description LIKE ? OR brand LIKE ?)');
-        values.push(searchLike, searchLike, searchLike);
-        orderSql = 'ORDER BY CASE WHEN name LIKE ? THEN 0 WHEN brand LIKE ? THEN 1 WHEN description LIKE ? THEN 2 ELSE 3 END, p.id DESC';
-        orderValues = [searchLike, searchLike, searchLike];
-      }
-    }
+app.get('/admin/products', ensureAdmin, productController.adminList);
 
-    const rows = await all(`SELECT p.*, COALESCE(r.review_count, 0) AS review_count
-      FROM products p LEFT JOIN (SELECT product_id, COUNT(*) AS review_count FROM reviews GROUP BY product_id) r
-      ON r.product_id = p.id ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ${orderSql}`, [...values, ...orderValues]);
-    res.json(rows);
-  } catch (e) {
-    res.status(500).json({ message: 'Query failed', error: e.message });
-  }
-});
+app.post('/admin/products', ensureAdmin, productValidators.createProduct, productController.createProduct);
 
-app.get('/featured', async (_, res) => {
-  try { res.json(await all('SELECT * FROM products WHERE is_featured = 1 ORDER BY rating DESC LIMIT 12')); }
-  catch (e) { res.status(500).json({ message: 'Query failed', error: e.message }); }
-});
+app.put('/admin/products/:id', ensureAdmin, productValidators.updateProduct, productController.updateProduct);
 
-app.get('/by-ids', async (req, res) => {
-  try {
-    const ids = String(req.query.ids || '').split(',').map((id) => Number(id.trim())).filter((n) => Number.isFinite(n) && n > 0);
-    if (!ids.length) return res.json([]);
-    const placeholders = ids.map(() => '?').join(',');
-    res.json(await all(`SELECT * FROM products WHERE id IN (${placeholders})`, ids));
-  } catch (e) { res.status(500).json({ message: 'Query failed', error: e.message }); }
-});
-
-app.post('/inventory/decrease', async (req, res) => {
-  try {
-    const items = Array.isArray(req.body.items) ? req.body.items : [];
-    if (!items.length) return res.status(400).json({ message: 'Missing items' });
-
-    for (const item of items) {
-      const product = await get('SELECT id, stock, name FROM products WHERE id = ?', [Number(item.product_id)]);
-      const quantity = Number(item.quantity || 0);
-      if (!product || quantity <= 0) return res.status(400).json({ message: 'Invalid item payload' });
-      if (Number(product.stock) < quantity) return res.status(400).json({ message: `Out of stock for ${product.name}` });
-    }
-
-    for (const item of items) await run('UPDATE products SET stock = stock - ? WHERE id = ?', [Number(item.quantity), Number(item.product_id)]);
-    res.json({ ok: true });
-  } catch (e) { res.status(500).json({ message: 'Cannot decrease inventory', error: e.message }); }
-});
-
-app.get('/admin/products', ensureAdmin, async (_, res) => {
-  try { res.json(await all('SELECT * FROM products ORDER BY id DESC')); }
-  catch (e) { res.status(500).json({ message: 'Query failed', error: e.message }); }
-});
-
-app.post('/admin/products', ensureAdmin, async (req, res) => {
-  try {
-    const { name, description, category, main_category, sub_category, price, image_url, stock, brand, warranty_months, is_featured } = req.body;
-    if (!name || !Number.isFinite(Number(price))) return res.status(400).json({ message: 'Missing required product fields' });
-
-    const resolved = resolveCategoryInput(main_category, sub_category, category);
-    if (resolved.error) return res.status(400).json({ message: resolved.error });
-
-    const result = await run(
-      'INSERT INTO products (name, description, category, main_category, sub_category, price, image_url, stock, rating, is_featured, brand, warranty_months) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [
-        name,
-        description || '',
-        resolved.subCategory,
-        resolved.mainCategory,
-        resolved.subCategory,
-        Number(price),
-        image_url || getCategoryImage(resolved.mainCategory, resolved.subCategory),
-        Number(stock || 0),
-        4.0,
-        Number(is_featured ? 1 : 0),
-        brand || 'Generic',
-        Number(warranty_months || 12)
-      ]
-    );
-    res.status(201).json(await get('SELECT * FROM products WHERE id = ?', [result.lastID]));
-  } catch (e) { res.status(500).json({ message: 'Create product failed', error: e.message }); }
-});
-
-app.put('/admin/products/:id', ensureAdmin, async (req, res) => {
-  try {
-    const product = await get('SELECT * FROM products WHERE id = ?', [req.params.id]);
-    if (!product) return res.status(404).json({ message: 'Product not found' });
-
-    const next = {
-      name: req.body.name ?? product.name,
-      description: req.body.description ?? product.description,
-      category: req.body.category ?? product.category,
-      main_category: req.body.main_category ?? product.main_category,
-      sub_category: req.body.sub_category ?? product.sub_category ?? product.category,
-      price: req.body.price ?? product.price,
-      image_url: req.body.image_url ?? product.image_url,
-      stock: req.body.stock ?? product.stock,
-      brand: req.body.brand ?? product.brand,
-      warranty_months: req.body.warranty_months ?? product.warranty_months,
-      is_featured: req.body.is_featured ?? product.is_featured
-    };
-
-    const resolved = resolveCategoryInput(next.main_category, next.sub_category, next.category);
-    if (resolved.error) return res.status(400).json({ message: resolved.error });
-
-    await run('UPDATE products SET name=?, description=?, category=?, main_category=?, sub_category=?, price=?, image_url=?, stock=?, brand=?, warranty_months=?, is_featured=? WHERE id=?',
-      [
-        next.name,
-        next.description,
-        resolved.subCategory,
-        resolved.mainCategory,
-        resolved.subCategory,
-        Number(next.price),
-        next.image_url,
-        Number(next.stock),
-        next.brand,
-        Number(next.warranty_months),
-        Number(next.is_featured ? 1 : 0),
-        req.params.id
-      ]);
-    res.json(await get('SELECT * FROM products WHERE id = ?', [req.params.id]));
-  } catch (e) { res.status(500).json({ message: 'Update product failed', error: e.message }); }
-});
-
-app.delete('/admin/products/:id', ensureAdmin, async (req, res) => {
-  try { await run('DELETE FROM products WHERE id = ?', [req.params.id]); res.json({ ok: true }); }
-  catch (e) { res.status(500).json({ message: 'Delete product failed', error: e.message }); }
-});
+app.delete('/admin/products/:id', ensureAdmin, productController.deleteProduct);
 
 app.post('/admin/products/:id/upload-image', ensureAdmin, (req, res) => {
   upload.single('image')(req, res, async (err) => {
@@ -1088,18 +840,8 @@ app.post('/admin/products/:id/upload-image', ensureAdmin, (req, res) => {
     }
 
     try {
-      const product = await get('SELECT id, image_url FROM products WHERE id = ?', [req.params.id]);
-      if (!product) {
-        if (req.file?.path && fs.existsSync(req.file.path)) {
-          fs.unlinkSync(req.file.path);
-        }
-        return res.status(404).json({ message: 'Product not found' });
-      }
-
-      const imageUrl = `${PUBLIC_BASE_URL}/uploads/products/${req.file.filename}`;
-      await run('UPDATE products SET image_url = ? WHERE id = ?', [imageUrl, req.params.id]);
-
-      return res.json({ ok: true, image_url: imageUrl });
+      req.publicBaseUrl = PUBLIC_BASE_URL;
+      return productController.uploadProductImage(req, res);
     } catch (error) {
       if (req.file?.path && fs.existsSync(req.file.path)) {
         fs.unlinkSync(req.file.path);
@@ -1109,107 +851,19 @@ app.post('/admin/products/:id/upload-image', ensureAdmin, (req, res) => {
   });
 });
 
-app.get('/admin/reviews', ensureAdmin, async (_, res) => {
-  try {
-    const rows = await all(
-      `SELECT r.id, r.product_id, r.user_id, r.user_name, r.rating, r.comment, r.order_id, r.created_at,
-              p.name AS product_name, p.image_url AS product_image_url
-       FROM reviews r
-       LEFT JOIN products p ON p.id = r.product_id
-       ORDER BY r.created_at DESC`
-    );
-    return res.json(rows);
-  } catch (e) {
-    return res.status(500).json({ message: 'Cannot load admin reviews', error: e.message });
-  }
-});
+app.get('/admin/reviews', ensureAdmin, productController.getAdminReviews);
 
-app.get('/reviews/user/:uid', async (req, res) => {
-  try {
-    const userId = Number(req.params.uid);
-    if (!userId) return res.status(400).json({ message: 'Invalid user id' });
+app.get('/reviews/user/:uid', productController.getUserReviews);
 
-    const rows = await all(
-      `SELECT id, product_id, user_id, user_name, rating, comment, order_id, created_at
-       FROM reviews
-       WHERE user_id = ?
-       ORDER BY created_at DESC`,
-      [userId]
-    );
-    return res.json(rows);
-  } catch (e) {
-    return res.status(500).json({ message: 'Cannot load user reviews', error: e.message });
-  }
-});
+app.get('/:id/reviews', productController.getReviewsByProduct);
 
-app.get('/:id/reviews', async (req, res) => {
-  try { res.json(await all('SELECT id, product_id, user_id, user_name, rating, comment, order_id, created_at FROM reviews WHERE product_id = ? ORDER BY created_at DESC', [req.params.id])); }
-  catch (e) { res.status(500).json({ message: 'Cannot load reviews', error: e.message }); }
-});
+app.post('/:id/reviews', productController.createReview);
 
-app.post('/:id/reviews', async (req, res) => {
-  try {
-    const productId = Number(req.params.id);
-    const { user_id, user_name, rating, comment, order_id } = req.body;
-    if (!user_id || !user_name || !rating || !comment || !order_id) return res.status(400).json({ message: 'Missing review fields or completed order_id' });
-    const numericRating = Number(rating);
-    if (numericRating < 1 || numericRating > 5) return res.status(400).json({ message: 'Rating must be 1..5' });
+app.delete('/reviews/:reviewId', ensureAdmin, productController.deleteReview);
 
-    // Enforce one review per order: if an order_id is provided, ensure that order hasn't been reviewed yet.
-    if (order_id) {
-      const dup = await get('SELECT id FROM reviews WHERE order_id = ? LIMIT 1', [Number(order_id)]);
-      if (dup) return res.status(400).json({ message: 'This order has already been reviewed' });
-    } else {
-      // Fallback: if no order_id supplied, fall back to preventing multiple reviews per (product, user)
-      const dup = await get('SELECT id FROM reviews WHERE product_id = ? AND user_id = ? LIMIT 1', [productId, Number(user_id)]);
-      if (dup) return res.status(400).json({ message: 'Product already reviewed by this user' });
-    }
+app.get('/:id', productController.getById);
 
-    await run('INSERT INTO reviews (product_id, user_id, user_name, rating, comment, order_id) VALUES (?, ?, ?, ?, ?, ?)',
-      [productId, Number(user_id), String(user_name), numericRating, String(comment), Number(order_id)]);
-
-    const summary = await get('SELECT AVG(rating) AS avg_rating FROM reviews WHERE product_id = ?', [productId]);
-    await run('UPDATE products SET rating = ? WHERE id = ?', [Number(summary?.avg_rating || 4).toFixed(1), productId]);
-    res.status(201).json({ ok: true });
-  } catch (e) { res.status(500).json({ message: 'Create review failed', error: e.message }); }
-});
-
-app.delete('/reviews/:reviewId', ensureAdmin, async (req, res) => {
-  try {
-    const review = await get('SELECT * FROM reviews WHERE id = ?', [req.params.reviewId]);
-    if (!review) return res.status(404).json({ message: 'Review not found' });
-
-    await run('DELETE FROM reviews WHERE id = ?', [req.params.reviewId]);
-    const summary = await get('SELECT AVG(rating) AS avg_rating FROM reviews WHERE product_id = ?', [review.product_id]);
-    await run('UPDATE products SET rating = ? WHERE id = ?', [summary?.avg_rating ? Number(summary.avg_rating).toFixed(1) : 4.0, review.product_id]);
-    res.json({ ok: true });
-  } catch (e) { res.status(500).json({ message: 'Delete review failed', error: e.message }); }
-});
-
-app.get('/:id', async (req, res) => {
-  try {
-    const row = await get('SELECT * FROM products WHERE id = ?', [req.params.id]);
-    if (!row) return res.status(404).json({ message: 'Product not found' });
-    const reviewMeta = await get('SELECT COUNT(*) AS review_count, AVG(rating) AS avg_rating FROM reviews WHERE product_id = ?', [req.params.id]);
-    const meta = categoryMetaFromRow(row);
-    res.json({
-      ...row,
-      main_category: meta.mainCategory,
-      sub_category: meta.subCategory,
-      basic_info: {
-        category: meta.subCategory,
-        main_category: meta.mainCategory,
-        stock: row.stock,
-        brand: row.brand,
-        warranty_months: row.warranty_months
-      },
-      review_count: Number(reviewMeta?.review_count || 0),
-      avg_rating: Number(reviewMeta?.avg_rating || row.rating || 0).toFixed(1)
-    });
-  } catch (e) { res.status(500).json({ message: 'Query failed', error: e.message }); }
-});
-
-initDb().then(() => {
+productService.initDb().then(() => {
   app.listen(port, () => {
     console.log(`Product service running on ${port}`);
   });
