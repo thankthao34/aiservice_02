@@ -15,45 +15,21 @@ const PRODUCT_SERVICE_URL = process.env.PRODUCT_SERVICE_URL || 'http://localhost
 
 const ORDER_STATUSES = ['pending', 'paid', 'shipping', 'completed', 'cancelled'];
 
-app.use(cors());
+const GATEWAY_URL = process.env.GATEWAY_URL || 'http://localhost:3000';
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (origin === GATEWAY_URL) return callback(null, true);
+    if (process.env.ALLOW_LOCAL_DEV === 'true' && origin.includes('localhost')) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  }
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
-const db = new sqlite3.Database('./db/orders.db');
-
-function run(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.run(sql, params, function callback(err) {
-      if (err) return reject(err);
-      return resolve(this);
-    });
-  });
-}
-
-async function ensureColumn(table, column, definition) {
-  const cols = await all(`PRAGMA table_info(${table})`);
-  const exists = cols.some((c) => c.name === column);
-  if (!exists) {
-    await run(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
-  }
-}
-
-function get(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => {
-      if (err) return reject(err);
-      return resolve(row);
-    });
-  });
-}
-
-function all(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-      if (err) return reject(err);
-      return resolve(rows);
-    });
-  });
-}
+const SqliteOrderRepository = require('./infrastructure/sqliteOrderRepository');
+const OrderService = require('./application/orderService');
+const orderController = require('./api/controllers/orderController');
 
 function isAdmin(req) {
   return String(req.headers['x-user-role'] || '').toLowerCase() === 'admin';
@@ -66,43 +42,43 @@ function ensureAdmin(req, res, next) {
   return next();
 }
 
-async function initDb() {
-  await run(`CREATE TABLE IF NOT EXISTS orders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    status TEXT DEFAULT 'pending',
-    total REAL NOT NULL,
-    receiver_name TEXT,
-    receiver_phone TEXT,
-    shipping_address TEXT,
-    shipping_city TEXT,
-    shipping_district TEXT,
-    shipping_ward TEXT,
-    shipping_note TEXT,
-    created_at TEXT DEFAULT (datetime('now'))
-  )`);
+const PRODUCT_SERVICE_URL_INTERNAL = process.env.PRODUCT_SERVICE_URL || 'http://product-service:3002';
+const USER_SERVICE_URL_INTERNAL = process.env.USER_SERVICE_URL || 'http://user-service:3001';
+const AI_SERVICE_URL_INTERNAL = process.env.AI_SERVICE_URL || 'http://ai-service:8000';
 
-  await ensureColumn('orders', 'receiver_name', 'TEXT');
-  await ensureColumn('orders', 'receiver_phone', 'TEXT');
-  await ensureColumn('orders', 'shipping_address', 'TEXT');
-  await ensureColumn('orders', 'shipping_city', 'TEXT');
-  await ensureColumn('orders', 'shipping_district', 'TEXT');
-  await ensureColumn('orders', 'shipping_ward', 'TEXT');
-  await ensureColumn('orders', 'shipping_note', 'TEXT');
+const repository = new SqliteOrderRepository('./db/orders.db');
+const orderService = new OrderService({
+  repository,
+  config: {
+    productServiceUrl: process.env.PRODUCT_SERVICE_URL || PRODUCT_SERVICE_URL_INTERNAL,
+    userServiceUrl: process.env.USER_SERVICE_URL || USER_SERVICE_URL_INTERNAL,
+    aiServiceUrl: process.env.AI_SERVICE_URL || AI_SERVICE_URL_INTERNAL
+  }
+});
 
-  await run(`CREATE TABLE IF NOT EXISTS order_items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    order_id INTEGER NOT NULL,
-    product_id INTEGER NOT NULL,
-    product_name TEXT NOT NULL,
-    product_category TEXT,
-    quantity INTEGER NOT NULL,
-    price REAL NOT NULL
-  )`);
+orderController.setService(orderService);
 
-  await ensureColumn('order_items', 'product_name', "TEXT DEFAULT 'Unknown Product'");
-  await ensureColumn('order_items', 'product_category', "TEXT DEFAULT 'accessory'");
-}
+app.get('/health', (_, res) => res.json({ ok: true, service: 'order-service' }));
+app.post('/create', orderController.create);
+app.post('/pay/:id', orderController.pay);
+app.get('/user/:uid', orderController.getUserOrders);
+app.get('/user/:uid/purchased-items', orderController.getPurchasedItems);
+app.get('/can-review', orderController.canReview);
+app.get('/admin/orders', ensureAdmin, orderController.adminList);
+app.put('/admin/orders/:id/status', ensureAdmin, orderController.adminUpdateStatus);
+
+(async () => {
+  try {
+    await repository.init();
+    await orderService.init();
+    app.listen(port, () => {
+      console.log(`Order service running on ${port}`);
+    });
+  } catch (error) {
+    console.error('Order service init failed', error);
+    process.exit(1);
+  }
+})();
 
 app.get('/health', (_, res) => res.json({ ok: true, service: 'order-service' }));
 

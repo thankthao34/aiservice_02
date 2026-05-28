@@ -813,8 +813,6 @@ app.get('/categories', (_, res) => {
 });
 
 app.get('/', productController.list);
-// handled by controller
-);
 
 app.get('/featured', productController.getFeatured);
 

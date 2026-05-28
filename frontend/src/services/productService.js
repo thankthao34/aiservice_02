@@ -1,8 +1,17 @@
 import http from './http';
 
 export const productService = {
-  list: (params = {}) => http.get('/products', { params }),
-  featured: () => http.get('/products/featured'),
+  list: (params = {}) => {
+    console.log('productService.list called', params);
+    return http.get('/products', { params }).then((res) => {
+      try { console.log('productService.list result length', Array.isArray(res.data) ? res.data.length : 'not-array'); } catch (e) {}
+      return res;
+    });
+  },
+  featured: () => {
+    console.log('productService.featured called');
+    return http.get('/products/featured').then((res) => { try { console.log('productService.featured length', Array.isArray(res.data) ? res.data.length : 'not-array'); } catch (e){}; return res; });
+  },
   detail: (id) => http.get(`/products/${id}`),
   byIds: (ids) => http.get('/products/by-ids', { params: { ids: ids.join(',') } }),
   categories: () => http.get('/products/categories'),
